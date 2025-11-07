@@ -1,0 +1,100 @@
+{
+  "name": "my-frontend-project",
+  "version": "1.0.0",
+  "description": "示例前端项目，展示如何集成 swagger-ts-toolkit",
+  "scripts": {
+    "// === API 类型生成相关脚本 ===": "",
+    "api:init": "stt init",
+    "api:generate": "stt generate",
+    "api:validate": "stt validate",
+    
+    "// === 环境相关的 API 生成 ===": "",
+    "api:dev": "cross-env NODE_ENV=development stt generate --service development --watch",
+    "api:staging": "cross-env NODE_ENV=staging stt generate --service staging",
+    "api:prod": "cross-env NODE_ENV=production stt generate --service production",
+    
+    "// === 服务相关的 API 生成 ===": "",
+    "api:user": "stt generate --service userService",
+    "api:order": "stt generate --service orderService",
+    "api:payment": "stt generate --service paymentService",
+    "api:product": "stt generate --service productService",
+    
+    "// === 批量操作 ===": "",
+    "api:generate:all": "npm run api:user && npm run api:order && npm run api:payment && npm run api:product",
+    "api:validate:all": "stt validate --service userService && stt validate --service orderService && stt validate --service paymentService",
+    
+    "// === 开发工作流集成 ===": "",
+    "predev": "npm run api:generate",
+    "dev": "vite",
+    "prebuild": "npm run api:prod",
+    "build": "vite build",
+    "pretest": "npm run api:validate",
+    "test": "jest",
+    
+    "// === 其他实用脚本 ===": "",
+    "api:check": "npm run api:validate && echo '✅ API 文档验证通过'",
+    "api:clean": "rm -rf src/types/api-*.d.ts src/api/generated/*",
+    "api:backup": "cp src/types/api-generated.d.ts src/types/api-generated.backup.d.ts",
+    "api:restore": "cp src/types/api-generated.backup.d.ts src/types/api-generated.d.ts",
+    
+    "// === Git Hooks 相关 ===": "",
+    "postinstall": "husky install",
+    "pre-commit": "npm run api:validate && lint-staged",
+    "post-merge": "npm run api:generate",
+    
+    "// === CI/CD 相关 ===": "",
+    "ci:api:generate": "stt generate --service $NODE_ENV",
+    "ci:api:validate": "stt validate --service $NODE_ENV",
+    
+    "// === 常规开发脚本 ===": "",
+    "start": "npm run dev",
+    "preview": "vite preview",
+    "lint": "eslint src --ext .ts,.tsx,.js,.jsx",
+    "lint:fix": "npm run lint -- --fix",
+    "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json,css,scss,md}\"",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "axios": "^1.6.0",
+    "react-query": "^3.39.0",
+    "react-router-dom": "^6.8.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0",
+    "@vitejs/plugin-react": "^4.0.0",
+    "vite": "^4.4.0",
+    "typescript": "^5.0.0",
+    "eslint": "^8.45.0",
+    "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "@typescript-eslint/parser": "^6.0.0",
+    "prettier": "^3.0.0",
+    "husky": "^8.0.0",
+    "lint-staged": "^13.0.0",
+    "cross-env": "^7.0.0",
+    "swagger-ts-toolkit": "^1.0.0",
+    "openapi-typescript": "^6.0.0"
+  },
+  "lint-staged": {
+    "src/**/*.{ts,tsx,js,jsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "docs/swagger/**/*.{yaml,yml,json}": [
+      "npm run api:validate"
+    ]
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "lint-staged",
+      "post-merge": "npm run api:generate",
+      "pre-push": "npm run api:validate && npm run type-check"
+    }
+  },
+  "engines": {
+    "node": ">=16.0.0",
+    "npm": ">=8.0.0"
+  }
+}

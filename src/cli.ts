@@ -22,6 +22,9 @@ program
   .option('-w, --watch', '监听文件变化并自动重新生成', false)
   .option('-o, --output <path>', '输出文件路径')
   .option('-e, --endpoints <path>', '端点常量输出路径')
+  .option('-f, --functions <path>', 'API函数输出路径')
+  .option('--no-api-functions', '禁用API函数生成')
+  .option('--api-functions', '启用API函数生成')
   .action(async (options) => {
     try {
       // 加载配置文件
@@ -40,11 +43,25 @@ program
         config.endpointsPath = options.endpoints;
       }
 
+      if (options.functions) {
+        config.apiFunctionsPath = options.functions;
+      }
+
+      // 处理API函数生成选项
+      let generateApiFunctions = config.generateApiFunctions;
+      if (options.apiFunctions) {
+        generateApiFunctions = true;
+      } else if (options.noApiFunctions) {
+        generateApiFunctions = false;
+      }
+
       // 生成选项
       const generateOptions: GenerateOptions = {
         source: options.source,
         service: options.service,
         watch: options.watch,
+        generateApiFunctions,
+        apiFunctionsPath: options.functions,
       };
 
       // 创建生成器并执行
@@ -115,8 +132,10 @@ export default {
   },
   outputPath: 'src/typings/api-generated.d.ts',
   endpointsPath: 'src/api/generated/endpoints.ts',
+  apiFunctionsPath: 'src/api/generated/api-functions.ts',
   backupPath: 'src/typings/api-generated.backup.d.ts',
   tempJsonPath: 'temp/swagger-converted.json',
+  generateApiFunctions: true,
 };
 `;
 }
@@ -135,8 +154,10 @@ function generateJsonConfig(): string {
     },
     outputPath: 'src/typings/api-generated.d.ts',
     endpointsPath: 'src/api/generated/endpoints.ts',
+    apiFunctionsPath: 'src/api/generated/api-functions.ts',
     backupPath: 'src/typings/api-generated.backup.d.ts',
     tempJsonPath: 'temp/swagger-converted.json',
+    generateApiFunctions: true,
   }, null, 2);
 }
 

@@ -15,10 +15,14 @@ export interface GeneratorConfig {
   outputPath: string;
   /** 端点常量输出路径 */
   endpointsPath: string;
+  /** API函数输出路径 */
+  apiFunctionsPath: string;
   /** 备份路径 */
   backupPath: string;
   /** 临时JSON文件路径 */
   tempJsonPath: string;
+  /** 是否生成API函数 */
+  generateApiFunctions: boolean;
 }
 
 /**
@@ -31,6 +35,10 @@ export interface GenerateOptions {
   service?: string;
   /** 是否监听文件变化 */
   watch?: boolean;
+  /** 是否生成API函数 */
+  generateApiFunctions?: boolean;
+  /** 自定义API函数输出路径 */
+  apiFunctionsPath?: string;
 }
 
 /**
@@ -69,3 +77,27 @@ export interface SwaggerData {
  * 文件格式类型
  */
 export type FileFormat = 'yaml' | 'json';
+
+/**
+ * 参数信息
+ */
+export interface ParameterInfo {
+  name: string;
+  type: string;
+  required: boolean;
+  in: 'path' | 'query' | 'header' | 'body';
+  description?: string;
+}
+
+/**
+ * API函数信息
+ */
+export interface ApiFunctionInfo extends ApiOperation {
+  functionName: string;
+  parameters: ParameterInfo[];
+  requestType: string;
+  responseType: string;
+  hasPathParams: boolean;
+  hasQueryParams: boolean;
+  hasBodyParams: boolean;
+}

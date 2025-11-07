@@ -1,0 +1,874 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "User Service API",
+    "description": "用户服务 API - 展示微服务架构中的用户管理",
+    "version": "2.0.0",
+    "contact": {
+      "name": "User Service Team",
+      "email": "user-service@company.com"
+    }
+  },
+  "servers": [
+    {
+      "url": "https://user-api.company.com/v2",
+      "description": "生产环境"
+    },
+    {
+      "url": "https://user-api-staging.company.com/v2", 
+      "description": "测试环境"
+    },
+    {
+      "url": "http://localhost:8001/v2",
+      "description": "本地开发环境"
+    }
+  ],
+  "paths": {
+    "/users": {
+      "get": {
+        "operationId": "getUserList",
+        "summary": "获取用户列表",
+        "description": "获取系统中的用户列表，支持分页、排序和筛选",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "description": "页码（从1开始）",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "description": "每页数量",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20
+            }
+          },
+          {
+            "name": "sortBy",
+            "in": "query",
+            "description": "排序字段",
+            "schema": {
+              "type": "string",
+              "enum": ["id", "username", "email", "createdAt", "lastLoginAt"],
+              "default": "id"
+            }
+          },
+          {
+            "name": "sortOrder",
+            "in": "query",
+            "description": "排序方向",
+            "schema": {
+              "type": "string",
+              "enum": ["asc", "desc"],
+              "default": "asc"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "description": "用户状态筛选",
+            "schema": {
+              "type": "string",
+              "enum": ["active", "inactive", "suspended", "pending"]
+            }
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "description": "搜索关键词（用户名或邮箱）",
+            "schema": {
+              "type": "string",
+              "minLength": 2,
+              "maxLength": 50
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功返回用户列表",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserListResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "请求参数错误",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "未授权",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "post": {
+        "operationId": "createUser",
+        "summary": "创建新用户",
+        "description": "在系统中创建一个新用户",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateUserRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "用户创建成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "请求数据无效",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "用户已存在",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/users/{userId}": {
+      "get": {
+        "operationId": "getUserById",
+        "summary": "根据ID获取用户信息",
+        "description": "获取指定用户的详细信息",
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "path",
+            "required": true,
+            "description": "用户ID",
+            "schema": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功返回用户信息",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "用户不存在",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "put": {
+        "operationId": "updateUser",
+        "summary": "更新用户信息",
+        "description": "更新指定用户的信息",
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "path",
+            "required": true,
+            "description": "用户ID",
+            "schema": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateUserRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "用户信息更新成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "请求数据无效",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "用户不存在",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "delete": {
+        "operationId": "deleteUser",
+        "summary": "删除用户",
+        "description": "从系统中删除指定用户（软删除）",
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "path",
+            "required": true,
+            "description": "用户ID",
+            "schema": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "用户删除成功"
+          },
+          "404": {
+            "description": "用户不存在",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/users/{userId}/profile": {
+      "get": {
+        "operationId": "getUserProfile",
+        "summary": "获取用户档案",
+        "description": "获取用户的详细档案信息",
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功返回用户档案",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserProfileResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      },
+      "put": {
+        "operationId": "updateUserProfile",
+        "summary": "更新用户档案",
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateUserProfileRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "档案更新成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserProfileResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    },
+    "/auth/login": {
+      "post": {
+        "operationId": "login",
+        "summary": "用户登录",
+        "description": "用户登录认证",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "登录成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LoginResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "认证失败",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/logout": {
+      "post": {
+        "operationId": "logout",
+        "summary": "用户登出",
+        "description": "用户登出并使token失效",
+        "responses": {
+          "204": {
+            "description": "登出成功"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "User": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "用户唯一标识符",
+            "example": "550e8400-e29b-41d4-a716-446655440000"
+          },
+          "username": {
+            "type": "string",
+            "description": "用户名",
+            "example": "john_doe",
+            "minLength": 3,
+            "maxLength": 30
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "description": "邮箱地址",
+            "example": "john.doe@example.com"
+          },
+          "firstName": {
+            "type": "string",
+            "description": "名",
+            "example": "John"
+          },
+          "lastName": {
+            "type": "string",
+            "description": "姓",
+            "example": "Doe"
+          },
+          "avatar": {
+            "type": "string",
+            "format": "uri",
+            "description": "头像URL",
+            "example": "https://cdn.example.com/avatars/john_doe.jpg"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["active", "inactive", "suspended", "pending"],
+            "description": "用户状态",
+            "example": "active"
+          },
+          "roles": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "用户角色",
+            "example": ["user", "premium"]
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "创建时间",
+            "example": "2024-01-01T10:00:00Z"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "更新时间",
+            "example": "2024-01-01T10:00:00Z"
+          },
+          "lastLoginAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "最后登录时间",
+            "example": "2024-01-01T10:00:00Z"
+          }
+        },
+        "required": ["id", "username", "email", "status", "createdAt"]
+      },
+      "CreateUserRequest": {
+        "type": "object",
+        "properties": {
+          "username": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 30,
+            "pattern": "^[a-zA-Z0-9_-]+$",
+            "example": "john_doe"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "example": "john.doe@example.com"
+          },
+          "password": {
+            "type": "string",
+            "minLength": 8,
+            "description": "密码，至少8位，须包含字母和数字",
+            "example": "SecurePass123"
+          },
+          "firstName": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 50,
+            "example": "John"
+          },
+          "lastName": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 50,
+            "example": "Doe"
+          },
+          "phone": {
+            "type": "string",
+            "pattern": "^\\+?[1-9]\\d{1,14}$",
+            "example": "+1234567890"
+          }
+        },
+        "required": ["username", "email", "password", "firstName", "lastName"]
+      },
+      "UpdateUserRequest": {
+        "type": "object",
+        "properties": {
+          "firstName": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 50
+          },
+          "lastName": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 50
+          },
+          "phone": {
+            "type": "string",
+            "pattern": "^\\+?[1-9]\\d{1,14}$"
+          },
+          "avatar": {
+            "type": "string",
+            "format": "uri"
+          }
+        }
+      },
+      "UserProfile": {
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "bio": {
+            "type": "string",
+            "maxLength": 500,
+            "description": "个人简介"
+          },
+          "website": {
+            "type": "string",
+            "format": "uri",
+            "description": "个人网站"
+          },
+          "location": {
+            "type": "string",
+            "maxLength": 100,
+            "description": "所在地"
+          },
+          "birthDate": {
+            "type": "string",
+            "format": "date",
+            "description": "生日"
+          },
+          "preferences": {
+            "type": "object",
+            "properties": {
+              "language": {
+                "type": "string",
+                "enum": ["zh-CN", "en-US", "ja-JP"],
+                "default": "zh-CN"
+              },
+              "timezone": {
+                "type": "string",
+                "example": "Asia/Shanghai"
+              },
+              "emailNotifications": {
+                "type": "boolean",
+                "default": true
+              }
+            }
+          }
+        }
+      },
+      "UpdateUserProfileRequest": {
+        "type": "object",
+        "properties": {
+          "bio": {
+            "type": "string",
+            "maxLength": 500
+          },
+          "website": {
+            "type": "string",
+            "format": "uri"
+          },
+          "location": {
+            "type": "string",
+            "maxLength": 100
+          },
+          "birthDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "preferences": {
+            "type": "object",
+            "properties": {
+              "language": {
+                "type": "string",
+                "enum": ["zh-CN", "en-US", "ja-JP"]
+              },
+              "timezone": {
+                "type": "string"
+              },
+              "emailNotifications": {
+                "type": "boolean"
+              }
+            }
+          }
+        }
+      },
+      "LoginRequest": {
+        "type": "object",
+        "properties": {
+          "username": {
+            "type": "string",
+            "description": "用户名或邮箱",
+            "example": "john_doe"
+          },
+          "password": {
+            "type": "string",
+            "description": "密码",
+            "example": "SecurePass123"
+          }
+        },
+        "required": ["username", "password"]
+      },
+      "LoginResponse": {
+        "type": "object",
+        "properties": {
+          "accessToken": {
+            "type": "string",
+            "description": "访问令牌",
+            "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+          },
+          "refreshToken": {
+            "type": "string",
+            "description": "刷新令牌",
+            "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+          },
+          "expiresIn": {
+            "type": "integer",
+            "description": "令牌过期时间（秒）",
+            "example": 3600
+          },
+          "user": {
+            "$ref": "#/components/schemas/User"
+          }
+        },
+        "required": ["accessToken", "refreshToken", "expiresIn", "user"]
+      },
+      "UserResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "data": {
+            "$ref": "#/components/schemas/User"
+          },
+          "message": {
+            "type": "string",
+            "example": "操作成功"
+          }
+        },
+        "required": ["success", "data"]
+      },
+      "UserProfileResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "data": {
+            "$ref": "#/components/schemas/UserProfile"
+          }
+        },
+        "required": ["success", "data"]
+      },
+      "UserListResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/User"
+            }
+          },
+          "pagination": {
+            "type": "object",
+            "properties": {
+              "page": {
+                "type": "integer",
+                "example": 1
+              },
+              "pageSize": {
+                "type": "integer",
+                "example": 20
+              },
+              "total": {
+                "type": "integer",
+                "example": 100
+              },
+              "totalPages": {
+                "type": "integer",
+                "example": 5
+              }
+            }
+          }
+        },
+        "required": ["success", "data", "pagination"]
+      },
+      "ApiError": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": false
+          },
+          "error": {
+            "type": "object",
+            "properties": {
+              "code": {
+                "type": "string",
+                "example": "USER_NOT_FOUND"
+              },
+              "message": {
+                "type": "string",
+                "example": "用户不存在"
+              },
+              "timestamp": {
+                "type": "string",
+                "format": "date-time",
+                "example": "2024-01-01T10:00:00Z"
+              }
+            }
+          }
+        },
+        "required": ["success", "error"]
+      },
+      "ValidationError": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": false
+          },
+          "error": {
+            "type": "object",
+            "properties": {
+              "code": {
+                "type": "string",
+                "example": "VALIDATION_ERROR"
+              },
+              "message": {
+                "type": "string",
+                "example": "数据验证失败"
+              },
+              "details": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "field": {
+                      "type": "string",
+                      "example": "email"
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "邮箱格式不正确"
+                    },
+                    "value": {
+                      "type": "string",
+                      "example": "invalid-email"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "required": ["success", "error"]
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "使用 JWT Bearer Token 进行认证"
+      }
+    }
+  }
+}

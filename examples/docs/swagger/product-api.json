@@ -1,0 +1,1055 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "商品管理 API",
+    "description": "电商系统商品管理核心接口",
+    "version": "2.0.0",
+    "contact": {
+      "name": "商品团队",
+      "email": "product@company.com"
+    }
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3001/api/v2",
+      "description": "本地开发环境"
+    },
+    {
+      "url": "https://product-api-dev.company.com/v2",
+      "description": "开发环境"
+    },
+    {
+      "url": "https://product-api.company.com/v2",
+      "description": "生产环境"
+    }
+  ],
+  "paths": {
+    "/products": {
+      "get": {
+        "operationId": "getProductList",
+        "summary": "获取商品列表",
+        "description": "分页获取商品列表，支持多种筛选条件",
+        "tags": ["商品管理"],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "description": "页码",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "description": "每页数量",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20
+            }
+          },
+          {
+            "name": "categoryId",
+            "in": "query",
+            "description": "商品分类ID",
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "keyword",
+            "in": "query",
+            "description": "搜索关键词",
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 100
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "description": "商品状态",
+            "schema": {
+              "type": "string",
+              "enum": ["active", "inactive", "draft", "deleted"]
+            }
+          },
+          {
+            "name": "minPrice",
+            "in": "query",
+            "description": "最低价格",
+            "schema": {
+              "type": "number",
+              "format": "decimal",
+              "minimum": 0
+            }
+          },
+          {
+            "name": "maxPrice",
+            "in": "query",
+            "description": "最高价格",
+            "schema": {
+              "type": "number",
+              "format": "decimal",
+              "minimum": 0
+            }
+          },
+          {
+            "name": "sortBy",
+            "in": "query",
+            "description": "排序字段",
+            "schema": {
+              "type": "string",
+              "enum": ["id", "name", "price", "sales", "createdAt", "updatedAt"],
+              "default": "id"
+            }
+          },
+          {
+            "name": "sortOrder",
+            "in": "query",
+            "description": "排序方向",
+            "schema": {
+              "type": "string",
+              "enum": ["asc", "desc"],
+              "default": "desc"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功获取商品列表",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductListResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          }
+        }
+      },
+      "post": {
+        "operationId": "createProduct",
+        "summary": "创建新商品",
+        "description": "添加一个新的商品",
+        "tags": ["商品管理"],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateProductRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "商品创建成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        }
+      }
+    },
+    "/products/{productId}": {
+      "get": {
+        "operationId": "getProductById",
+        "summary": "根据ID获取商品详情",
+        "description": "获取指定商品的详细信息",
+        "tags": ["商品管理"],
+        "parameters": [
+          {
+            "name": "productId",
+            "in": "path",
+            "required": true,
+            "description": "商品ID",
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "minimum": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功获取商品信息",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      },
+      "put": {
+        "operationId": "updateProduct",
+        "summary": "更新商品信息",
+        "description": "更新指定商品的信息",
+        "tags": ["商品管理"],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "productId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateProductRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "商品更新成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      },
+      "delete": {
+        "operationId": "deleteProduct",
+        "summary": "删除商品",
+        "description": "软删除指定商品",
+        "tags": ["商品管理"],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "productId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "商品删除成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "商品删除成功"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/categories": {
+      "get": {
+        "operationId": "getCategoryList",
+        "summary": "获取商品分类列表",
+        "description": "获取所有商品分类",
+        "tags": ["分类管理"],
+        "parameters": [
+          {
+            "name": "parentId",
+            "in": "query",
+            "description": "父分类ID，获取子分类",
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "level",
+            "in": "query",
+            "description": "分类层级",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 3
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功获取分类列表",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Category"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/products/{productId}/inventory": {
+      "get": {
+        "operationId": "getProductInventory",
+        "summary": "获取商品库存",
+        "description": "获取指定商品的库存信息",
+        "tags": ["库存管理"],
+        "parameters": [
+          {
+            "name": "productId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功获取库存信息",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/ProductInventory"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      },
+      "put": {
+        "operationId": "updateProductInventory",
+        "summary": "更新商品库存",
+        "description": "更新指定商品的库存数量",
+        "tags": ["库存管理"],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "productId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateInventoryRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "库存更新成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/ProductInventory"
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "库存更新成功"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Product": {
+        "type": "object",
+        "required": ["id", "name", "price", "categoryId", "status", "createdAt"],
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64",
+            "description": "商品ID",
+            "example": 1001
+          },
+          "name": {
+            "type": "string",
+            "description": "商品名称",
+            "example": "iPhone 15 Pro",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "description": {
+            "type": "string",
+            "description": "商品描述",
+            "example": "Apple iPhone 15 Pro 128GB 深空黑色",
+            "maxLength": 2000
+          },
+          "price": {
+            "type": "number",
+            "format": "decimal",
+            "description": "商品价格",
+            "example": 7999.00,
+            "minimum": 0
+          },
+          "originalPrice": {
+            "type": "number",
+            "format": "decimal",
+            "description": "原价",
+            "example": 8999.00,
+            "minimum": 0
+          },
+          "categoryId": {
+            "type": "integer",
+            "format": "int64",
+            "description": "分类ID",
+            "example": 101
+          },
+          "category": {
+            "$ref": "#/components/schemas/Category"
+          },
+          "brand": {
+            "type": "string",
+            "description": "品牌",
+            "example": "Apple",
+            "maxLength": 100
+          },
+          "model": {
+            "type": "string",
+            "description": "型号",
+            "example": "iPhone 15 Pro",
+            "maxLength": 100
+          },
+          "sku": {
+            "type": "string",
+            "description": "商品SKU",
+            "example": "IPH15P-128-BLACK",
+            "maxLength": 100
+          },
+          "images": {
+            "type": "array",
+            "description": "商品图片",
+            "items": {
+              "type": "string",
+              "format": "uri"
+            },
+            "example": [
+              "https://cdn.example.com/products/iphone15pro/1.jpg",
+              "https://cdn.example.com/products/iphone15pro/2.jpg"
+            ]
+          },
+          "tags": {
+            "type": "array",
+            "description": "商品标签",
+            "items": {
+              "type": "string"
+            },
+            "example": ["热销", "新品", "推荐"]
+          },
+          "specifications": {
+            "type": "object",
+            "description": "商品规格",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "example": {
+              "颜色": "深空黑色",
+              "存储容量": "128GB",
+              "屏幕尺寸": "6.1英寸"
+            }
+          },
+          "status": {
+            "type": "string",
+            "enum": ["active", "inactive", "draft", "deleted"],
+            "description": "商品状态",
+            "example": "active"
+          },
+          "stock": {
+            "type": "integer",
+            "description": "库存数量",
+            "example": 100,
+            "minimum": 0
+          },
+          "sales": {
+            "type": "integer",
+            "description": "销量",
+            "example": 1250,
+            "minimum": 0
+          },
+          "rating": {
+            "type": "number",
+            "format": "float",
+            "description": "评分",
+            "example": 4.8,
+            "minimum": 0,
+            "maximum": 5
+          },
+          "reviewCount": {
+            "type": "integer",
+            "description": "评价数量",
+            "example": 328,
+            "minimum": 0
+          },
+          "weight": {
+            "type": "number",
+            "format": "decimal",
+            "description": "重量（克）",
+            "example": 187.0,
+            "minimum": 0
+          },
+          "dimensions": {
+            "type": "object",
+            "description": "商品尺寸",
+            "properties": {
+              "length": {
+                "type": "number",
+                "format": "decimal",
+                "description": "长度（毫米）"
+              },
+              "width": {
+                "type": "number",
+                "format": "decimal",
+                "description": "宽度（毫米）"
+              },
+              "height": {
+                "type": "number",
+                "format": "decimal",
+                "description": "高度（毫米）"
+              }
+            }
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "创建时间",
+            "example": "2024-01-01T00:00:00Z"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "更新时间",
+            "example": "2024-01-15T10:30:00Z"
+          }
+        }
+      },
+      "CreateProductRequest": {
+        "type": "object",
+        "required": ["name", "price", "categoryId"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200,
+            "example": "iPhone 15 Pro"
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 2000,
+            "example": "Apple iPhone 15 Pro 128GB 深空黑色"
+          },
+          "price": {
+            "type": "number",
+            "format": "decimal",
+            "minimum": 0,
+            "example": 7999.00
+          },
+          "originalPrice": {
+            "type": "number",
+            "format": "decimal",
+            "minimum": 0,
+            "example": 8999.00
+          },
+          "categoryId": {
+            "type": "integer",
+            "format": "int64",
+            "example": 101
+          },
+          "brand": {
+            "type": "string",
+            "maxLength": 100,
+            "example": "Apple"
+          },
+          "model": {
+            "type": "string",
+            "maxLength": 100,
+            "example": "iPhone 15 Pro"
+          },
+          "sku": {
+            "type": "string",
+            "maxLength": 100,
+            "example": "IPH15P-128-BLACK"
+          },
+          "images": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uri"
+            }
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "specifications": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "stock": {
+            "type": "integer",
+            "minimum": 0,
+            "default": 0
+          },
+          "weight": {
+            "type": "number",
+            "format": "decimal",
+            "minimum": 0
+          },
+          "dimensions": {
+            "type": "object",
+            "properties": {
+              "length": {
+                "type": "number",
+                "format": "decimal"
+              },
+              "width": {
+                "type": "number",
+                "format": "decimal"
+              },
+              "height": {
+                "type": "number",
+                "format": "decimal"
+              }
+            }
+          }
+        }
+      },
+      "UpdateProductRequest": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 2000
+          },
+          "price": {
+            "type": "number",
+            "format": "decimal",
+            "minimum": 0
+          },
+          "originalPrice": {
+            "type": "number",
+            "format": "decimal",
+            "minimum": 0
+          },
+          "categoryId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "brand": {
+            "type": "string",
+            "maxLength": 100
+          },
+          "model": {
+            "type": "string",
+            "maxLength": 100
+          },
+          "images": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uri"
+            }
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "specifications": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "status": {
+            "type": "string",
+            "enum": ["active", "inactive", "draft"]
+          },
+          "weight": {
+            "type": "number",
+            "format": "decimal",
+            "minimum": 0
+          },
+          "dimensions": {
+            "type": "object",
+            "properties": {
+              "length": {
+                "type": "number",
+                "format": "decimal"
+              },
+              "width": {
+                "type": "number",
+                "format": "decimal"
+              },
+              "height": {
+                "type": "number",
+                "format": "decimal"
+              }
+            }
+          }
+        }
+      },
+      "Category": {
+        "type": "object",
+        "required": ["id", "name", "level"],
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64",
+            "description": "分类ID",
+            "example": 101
+          },
+          "name": {
+            "type": "string",
+            "description": "分类名称",
+            "example": "智能手机",
+            "maxLength": 100
+          },
+          "parentId": {
+            "type": "integer",
+            "format": "int64",
+            "description": "父分类ID",
+            "example": 100
+          },
+          "level": {
+            "type": "integer",
+            "description": "分类层级",
+            "example": 2,
+            "minimum": 1,
+            "maximum": 3
+          },
+          "sort": {
+            "type": "integer",
+            "description": "排序",
+            "example": 1,
+            "minimum": 0
+          },
+          "icon": {
+            "type": "string",
+            "format": "uri",
+            "description": "分类图标",
+            "example": "https://cdn.example.com/icons/smartphone.png"
+          },
+          "children": {
+            "type": "array",
+            "description": "子分类",
+            "items": {
+              "$ref": "#/components/schemas/Category"
+            }
+          }
+        }
+      },
+      "ProductInventory": {
+        "type": "object",
+        "required": ["productId", "stock", "reserved", "available"],
+        "properties": {
+          "productId": {
+            "type": "integer",
+            "format": "int64",
+            "description": "商品ID",
+            "example": 1001
+          },
+          "stock": {
+            "type": "integer",
+            "description": "总库存",
+            "example": 100,
+            "minimum": 0
+          },
+          "reserved": {
+            "type": "integer",
+            "description": "预留库存",
+            "example": 5,
+            "minimum": 0
+          },
+          "available": {
+            "type": "integer",
+            "description": "可用库存",
+            "example": 95,
+            "minimum": 0
+          },
+          "lowStockThreshold": {
+            "type": "integer",
+            "description": "低库存阈值",
+            "example": 10,
+            "minimum": 0
+          },
+          "lastUpdated": {
+            "type": "string",
+            "format": "date-time",
+            "description": "最后更新时间",
+            "example": "2024-01-15T10:30:00Z"
+          }
+        }
+      },
+      "UpdateInventoryRequest": {
+        "type": "object",
+        "required": ["stock"],
+        "properties": {
+          "stock": {
+            "type": "integer",
+            "description": "库存数量",
+            "minimum": 0,
+            "example": 150
+          },
+          "operation": {
+            "type": "string",
+            "enum": ["set", "add", "subtract"],
+            "description": "操作类型：set-设置，add-增加，subtract-减少",
+            "default": "set"
+          },
+          "reason": {
+            "type": "string",
+            "description": "操作原因",
+            "maxLength": 200,
+            "example": "补货入库"
+          }
+        }
+      },
+      "ProductResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "data": {
+            "$ref": "#/components/schemas/Product"
+          },
+          "message": {
+            "type": "string",
+            "example": "操作成功"
+          }
+        },
+        "required": ["success", "data"]
+      },
+      "ProductListResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Product"
+            }
+          },
+          "pagination": {
+            "type": "object",
+            "properties": {
+              "page": {
+                "type": "integer",
+                "example": 1
+              },
+              "pageSize": {
+                "type": "integer",
+                "example": 20
+              },
+              "total": {
+                "type": "integer",
+                "example": 1250
+              },
+              "totalPages": {
+                "type": "integer",
+                "example": 63
+              }
+            }
+          }
+        },
+        "required": ["success", "data", "pagination"]
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "required": ["success", "error"],
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": false
+          },
+          "error": {
+            "type": "object",
+            "required": ["code", "message"],
+            "properties": {
+              "code": {
+                "type": "string",
+                "example": "PRODUCT_NOT_FOUND"
+              },
+              "message": {
+                "type": "string",
+                "example": "商品不存在"
+              },
+              "details": {
+                "type": "string",
+                "example": "ID为1001的商品不存在或已被删除"
+              }
+            }
+          }
+        }
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "请求参数错误",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "未授权访问",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "资源不存在",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "使用 JWT Bearer Token 进行认证"
+      }
+    }
+  }
+}

@@ -28,10 +28,14 @@ export const DEFAULT_CONFIG: GeneratorConfig = {
   outputPath: 'src/typings/api-generated.d.ts',
   // 端点常量输出路径
   endpointsPath: 'src/api/generated/endpoints.ts',
+  // API函数输出路径
+  apiFunctionsPath: 'src/api/generated/api-functions.ts',
   // 备份路径
   backupPath: 'src/typings/api-generated.backup.d.ts',
   // 临时JSON文件路径（用于YAML转换）
   tempJsonPath: 'temp/swagger-converted.json',
+  // 是否生成API函数
+  generateApiFunctions: true,
 };
 
 /**

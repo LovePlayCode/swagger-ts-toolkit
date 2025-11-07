@@ -1,4 +1,3 @@
-import path from 'node:path';
 import type { GenerateOptions, GeneratorConfig } from '../types/index.js';
 import { mergeConfig } from '../config/index.js';
 import { 
@@ -17,6 +16,7 @@ import {
 import { generateTypeDefinitions } from '../generators/type-generator.js';
 import { generateEndpointsFile } from '../generators/endpoints-generator.js';
 import { generateApiModule } from '../generators/api-generator.js';
+import { generateApiFunctions } from '../generators/api-function-generator.js';
 import { startWatchMode } from '../watcher/file-watcher.js';
 
 /**
@@ -33,7 +33,13 @@ export class SwaggerTsGenerator {
    * 生成所有代码
    */
   async generate(options: GenerateOptions = {}): Promise<void> {
-    const { source = 'auto', service = 'default', watch = false } = options;
+    const { 
+      source = 'auto', 
+      service = 'default', 
+      watch = false,
+      generateApiFunctions: shouldGenerateApiFunctions = this.config.generateApiFunctions,
+      apiFunctionsPath
+    } = options;
 
     if (watch) {
       await startWatchMode((watchOptions) => this.generate({ ...options, ...watchOptions, watch: false }));
@@ -70,9 +76,16 @@ export class SwaggerTsGenerator {
       const endpoints = extractEndpoints(swaggerData);
       await generateEndpointsFile(endpoints, this.config.endpointsPath);
 
-      // 生成API模块
+      // 生成API模块（兼容旧版本）
       const apiModulePath = `src/api/generated/${service}.ts`;
       await generateApiModule(swaggerData, apiModulePath, service);
+
+      // 生成API函数（新功能）
+      if (shouldGenerateApiFunctions) {
+        const functionsPath = apiFunctionsPath || this.config.apiFunctionsPath.replace('.ts', `-${service}.ts`);
+        await generateApiFunctions(swaggerData, functionsPath, service);
+        console.log(`✅ API函数已生成: ${functionsPath}`);
+      }
 
       console.log('✅ API 类型生成成功');
     } catch (error) {
