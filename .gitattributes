@@ -1,0 +1,22 @@
+# Auto detect text files and perform LF normalization
+* text=auto
+
+# TypeScript files
+*.ts text eol=lf
+*.js text eol=lf
+*.json text eol=lf
+
+# Documentation
+*.md text eol=lf
+
+# Configuration files
+*.yml text eol=lf
+*.yaml text eol=lf
+
+# Package files
+package.json text eol=lf
+package-lock.json text eol=lf
+
+# Ignore generated files in language statistics
+dist/ linguist-generated=true
+*.d.ts linguist-generated=true
