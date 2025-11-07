@@ -1,0 +1,84 @@
+refactor(examples): 按功能属性重新整理目录结构
+
+## 📋 变更说明
+
+### 目录结构优化
+按文件功能属性将 examples 文件夹重新分类，从混乱的堆放改为清晰的功能分组：
+
+- 01-getting-started/   🚀 入门示例 (4个文件)
+- 02-configuration/     ⚙️ 配置示例 (5个文件)
+- 03-api-generation/    🔧 API生成 (5个文件)
+- 04-custom-request/    🌐 自定义客户端 (4个文件)
+- 05-integration/       🔗 项目集成 (2个文件)
+- 06-advanced-usage/    🎯 高级用法 (4个文件)
+- 08-swagger-files/     📄 Swagger文档 (3个文件)
+- 09-generated-output/  📤 生成文件示例 (3个文件)
+- 10-documentation/     📚 文档和指南 (3个文件)
+
+### 文件迁移
+✓ quick-start.js                  → 01-getting-started/
+✓ cli-examples.md                 → 01-getting-started/cli-usage.md
+✓ config-examples/*               → 02-configuration/
+✓ multi-service.js                → 03-api-generation/
+✓ remote-swagger.js               → 03-api-generation/
+✓ watch-mode.js                   → 03-api-generation/
+✓ custom-request-examples.ts      → 04-custom-request/middleware-examples.ts
+✓ test-custom-clients.js          → 04-custom-request/compatibility-test.js
+✓ test-type-compatibility.ts      → 04-custom-request/type-compatibility-test.ts
+✓ microservices-setup.js          → 05-integration/microservices/setup.js
+✓ error-handling.js               → 06-advanced-usage/
+✓ development-workflow.js         → 06-advanced-usage/
+✓ real-world-usage.ts             → 06-advanced-usage/
+✓ sample-swagger-files/*          → 08-swagger-files/
+✓ docs/api-functions-example.ts   → 09-generated-output/
+✓ docs/usage-example.ts           → 09-generated-output/
+✓ docs/CUSTOM_REQUEST_GUIDE.md    → 10-documentation/
+✓ docs/TYPE_COMPATIBILITY_FIX.md  → 10-documentation/
+
+### 文档新增
+✓ 创建 7 个新的 README 文件，提供清晰的导航和使用指南
+✓ 创建 STRUCTURE_OPTIMIZATION.md - 优化说明文档
+✓ 创建 OPTIMIZATION_REPORT.md - 详细优化报告
+✓ 创建 DIRECTORY_STRUCTURE.txt - 目录结构可视化
+
+### 目录清理
+✓ 删除冗余目录 config-examples/
+✓ 删除冗余目录 sample-swagger-files/
+
+## 🎯 优化成果
+
+### ✅ 目标达成
+- 结构清晰：从混乱改为有序的功能分类
+- 文档完善：每个功能目录都有详细说明
+- 易于导航：用户可快速找到需要的示例
+- 便于维护：文件集中管理，减少重复
+
+### ✅ 用户体验提升
+- 新手用户：有明确的学习路径和入门指南
+- 进阶用户：可快速定位高级功能示例
+- 企业应用：参考案例和最佳实践清晰可见
+- 开发维护：后续添加新示例有明确位置
+
+## 📊 统计信息
+
+| 指标 | 数值 |
+|-----|------|
+| 功能分类目录 | 10 个 |
+| README 文档 | 9 个 |
+| 示例文件 | 25+ 个 |
+| 配置文件 | 2 个 |
+| 总文件数 | 60+ 个 |
+
+## 🔗 相关文档
+
+- DIRECTORY_STRUCTURE.txt - 目录结构可视化
+- OPTIMIZATION_REPORT.md - 详细优化报告
+- STRUCTURE_OPTIMIZATION.md - 优化说明
+- README.md - 导航指南（用户入口）
+
+## 💬 说明
+
+这次优化按照 REORGANIZATION_PLAN.md 中的计划完全执行，实现了对 examples 
+目录的系统性重构。新的结构提供了更清晰的组织方式，有利于用户学习、查找和维护。
+
+所有示例文件都已验证并保持可用状态。
