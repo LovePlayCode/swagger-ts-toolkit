@@ -1,7 +1,18 @@
 // 🤖 基于Swagger生成的API调用模块 - productApi
 // ⚠️  请勿手动修改此文件
 
-import axios, { AxiosResponse, AxiosRequestConfig } from 'axios';
+import axios, { AxiosResponse } from 'axios';
+
+// 通用请求配置接口
+interface ApiRequestConfig {
+  url?: string;
+  method?: string;
+  data?: any;
+  params?: any;
+  headers?: Record<string, string>;
+  timeout?: number;
+  [key: string]: any;
+}
 import type { components } from './api-generated';
 import { API_ENDPOINTS } from './endpoints';
 
@@ -59,7 +70,7 @@ export const productApiApi = {
    * @description GET /products
    * @returns Promise<components['schemas']['ProductListResponse']>
    */
-  async getProductList(params?: any, config?: AxiosRequestConfig): Promise<components['schemas']['ProductListResponse']> {
+  async getProductList(params?: any, config?: ApiRequestConfig): Promise<components['schemas']['ProductListResponse']> {
     const url = buildUrl(API_ENDPOINTS.getProductList.path, params);
     return apiClient.get(url, { params, ...config });
   },
@@ -69,7 +80,7 @@ export const productApiApi = {
    * @description POST /products
    * @returns Promise<any>
    */
-  async createProduct(data?: components['schemas']['CreateProductRequest'], params?: any, config?: AxiosRequestConfig): Promise<any> {
+  async createProduct(data?: components['schemas']['CreateProductRequest'], params?: any, config?: ApiRequestConfig): Promise<any> {
     const url = buildUrl(API_ENDPOINTS.createProduct.path, params);
     return apiClient.post(url, data, { ...config });
   },
@@ -79,7 +90,7 @@ export const productApiApi = {
    * @description GET /products/{productId}
    * @returns Promise<components['schemas']['ProductResponse']>
    */
-  async getProductById(params?: any, config?: AxiosRequestConfig): Promise<components['schemas']['ProductResponse']> {
+  async getProductById(params?: any, config?: ApiRequestConfig): Promise<components['schemas']['ProductResponse']> {
     const url = buildUrl(API_ENDPOINTS.getProductById.path, params);
     return apiClient.get(url, { params, ...config });
   },
@@ -89,7 +100,7 @@ export const productApiApi = {
    * @description PUT /products/{productId}
    * @returns Promise<components['schemas']['ProductResponse']>
    */
-  async updateProduct(data?: components['schemas']['UpdateProductRequest'], params?: any, config?: AxiosRequestConfig): Promise<components['schemas']['ProductResponse']> {
+  async updateProduct(data?: components['schemas']['UpdateProductRequest'], params?: any, config?: ApiRequestConfig): Promise<components['schemas']['ProductResponse']> {
     const url = buildUrl(API_ENDPOINTS.updateProduct.path, params);
     return apiClient.put(url, data, { ...config });
   },
@@ -99,7 +110,7 @@ export const productApiApi = {
    * @description DELETE /products/{productId}
    * @returns Promise<any>
    */
-  async deleteProduct(params?: any, config?: AxiosRequestConfig): Promise<any> {
+  async deleteProduct(params?: any, config?: ApiRequestConfig): Promise<any> {
     const url = buildUrl(API_ENDPOINTS.deleteProduct.path, params);
     return apiClient.delete(url, { params, ...config });
   },
@@ -109,7 +120,7 @@ export const productApiApi = {
    * @description GET /categories
    * @returns Promise<any>
    */
-  async getCategoryList(params?: any, config?: AxiosRequestConfig): Promise<any> {
+  async getCategoryList(params?: any, config?: ApiRequestConfig): Promise<any> {
     const url = buildUrl(API_ENDPOINTS.getCategoryList.path, params);
     return apiClient.get(url, { params, ...config });
   },
@@ -119,7 +130,7 @@ export const productApiApi = {
    * @description GET /products/{productId}/inventory
    * @returns Promise<any>
    */
-  async getProductInventory(params?: any, config?: AxiosRequestConfig): Promise<any> {
+  async getProductInventory(params?: any, config?: ApiRequestConfig): Promise<any> {
     const url = buildUrl(API_ENDPOINTS.getProductInventory.path, params);
     return apiClient.get(url, { params, ...config });
   },
@@ -129,7 +140,7 @@ export const productApiApi = {
    * @description PUT /products/{productId}/inventory
    * @returns Promise<any>
    */
-  async updateProductInventory(data?: components['schemas']['UpdateInventoryRequest'], params?: any, config?: AxiosRequestConfig): Promise<any> {
+  async updateProductInventory(data?: components['schemas']['UpdateInventoryRequest'], params?: any, config?: ApiRequestConfig): Promise<any> {
     const url = buildUrl(API_ENDPOINTS.updateProductInventory.path, params);
     return apiClient.put(url, data, { ...config });
   },
