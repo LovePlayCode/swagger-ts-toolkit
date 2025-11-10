@@ -15,6 +15,8 @@ export interface GeneratorConfig {
   outputPath: string;
   /** 端点常量输出路径 */
   endpointsPath: string;
+  /** API模块输出路径（兼容旧版本） */
+  apiModulePath?: string;
   /** API函数输出路径 */
   apiFunctionsPath: string;
   /** 备份路径 */

@@ -69,20 +69,30 @@ export class SwaggerTsGenerator {
       const swaggerData = await loadSwaggerData(processedSource);
       validateSwaggerData(swaggerData);
 
-      // 生成类型定义
+      // 生成类型定义（使用配置的路径）
       await generateTypeDefinitions(processedSource, this.config.outputPath);
 
-      // 生成端点常量
+      // 生成端点常量（使用配置的路径）
       const endpoints = extractEndpoints(swaggerData);
-      await generateEndpointsFile(endpoints, this.config.endpointsPath);
+      // 如果配置了多服务，为每个服务生成单独的端点文件
+      const endpointsPath = service !== 'default' 
+        ? this.config.endpointsPath.replace('.ts', `-${service}.ts`)
+        : this.config.endpointsPath;
+      await generateEndpointsFile(endpoints, endpointsPath);
 
-      // 生成API模块（兼容旧版本）
-      const apiModulePath = `src/api/generated/${service}.ts`;
+      // 生成API模块（兼容旧版本，使用配置的路径）
+      // 如果用户配置了 apiModulePath，使用它；否则使用默认路径
+      const apiModulePath = this.config.apiModulePath 
+        ? (service !== 'default' ? this.config.apiModulePath.replace('.ts', `-${service}.ts`) : this.config.apiModulePath)
+        : `src/api/generated/${service}.ts`;
       await generateApiModule(swaggerData, apiModulePath, service);
 
-      // 生成API函数（新功能）
+      // 生成API函数（新功能，使用配置的路径）
       if (shouldGenerateApiFunctions) {
-        const functionsPath = apiFunctionsPath || this.config.apiFunctionsPath.replace('.ts', `-${service}.ts`);
+        const functionsPath = apiFunctionsPath 
+          || (service !== 'default' 
+            ? this.config.apiFunctionsPath.replace('.ts', `-${service}.ts`)
+            : this.config.apiFunctionsPath);
         await generateApiFunctions(swaggerData, functionsPath, service);
         console.log(`✅ API函数已生成: ${functionsPath}`);
       }
