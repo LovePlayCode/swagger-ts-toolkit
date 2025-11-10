@@ -28,8 +28,10 @@ async function generateApiFromDocs() {
     // 生成文件的输出路径
     outputPath: path.resolve(__dirname, 'generated/api-types.d.ts'),
     endpointsPath: path.resolve(__dirname, 'generated/endpoints.ts'),
+    apiFunctionsPath: path.resolve(__dirname, 'generated/api-functions.ts'),
     backupPath: path.resolve(__dirname, 'generated/.backup/api-types.backup.d.ts'),
     tempJsonPath: path.resolve(__dirname, '.temp/swagger-converted.json'),
+    generateApiFunctions: true,
   });
 
   try {

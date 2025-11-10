@@ -404,7 +404,7 @@ export const authMiddleware: RequestMiddleware = {
     if (token) {
       config.headers = {
         ...config.headers,
-        Authorization: \`Bearer \${token}\`,
+        Authorization: ` + '`Bearer ${token}`' + `,
       };
     }
     return config;
@@ -435,7 +435,7 @@ export const errorHandlingMiddleware: RequestMiddleware = {
  */
 export const loggingMiddleware: RequestMiddleware = {
   onRequest: (config) => {
-    console.log(\`[API Request] \${config.method} \${config.url}\`, config);
+    console.log(` + '`[API Request] ${config.method} ${config.url}`' + `, config);
     return config;
   },
   onResponse: (response) => {
@@ -479,53 +479,6 @@ export function getApiClient(): RequestClient {
   return globalApiClient;
 }
 
-// 请求拦截器
-apiClient.interceptors.request.use(
-  (config) => {
-    // 添加认证token
-    const token = localStorage.getItem('token') || sessionStorage.getItem('token');
-    if (token) {
-      config.headers.Authorization = \`Bearer \${token}\`;
-    }
-    return config;
-  },
-  (error) => {
-    return Promise.reject(error);
-  }
-);
-
-// 响应拦截器
-apiClient.interceptors.response.use(
-  (response) => {
-    // 统一处理响应数据
-    return response.data;
-  },
-  (error) => {
-    // 统一错误处理
-    console.error('API请求错误:', error);
-    
-    if (error.response?.status === 401) {
-      // 未授权，清除token并跳转登录
-      localStorage.removeItem('token');
-      sessionStorage.removeItem('token');
-      window.location.href = '/login';
-    }
-    
-    return Promise.reject(error);
-  }
-);
-
-/**
- * 构建URL路径，替换路径参数
- */
-function buildPath(path: string, pathParams: Record<string, any> = {}): string {
-  let builtPath = path;
-  for (const [key, value] of Object.entries(pathParams)) {
-    builtPath = builtPath.replace(\`{\${key}}\`, encodeURIComponent(String(value)));
-  }
-  return builtPath;
-}
-
 // ==================== 工具函数 ====================
 
 /**
@@ -534,7 +487,7 @@ function buildPath(path: string, pathParams: Record<string, any> = {}): string {
 function buildPath(path: string, pathParams: Record<string, any> = {}): string {
   let builtPath = path;
   for (const [key, value] of Object.entries(pathParams)) {
-    builtPath = builtPath.replace(\`{\${key}}\`, encodeURIComponent(String(value)));
+    builtPath = builtPath.replace(` + '`{${key}}`' + `, encodeURIComponent(String(value)));
   }
   return builtPath;
 }

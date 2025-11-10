@@ -29,8 +29,16 @@
     "client",
     "codegen"
   ],
-  "author": "",
+  "author": "Your Name <your.email@example.com>",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yourusername/swagger-ts-toolkit.git"
+  },
+  "bugs": {
+    "url": "https://github.com/yourusername/swagger-ts-toolkit/issues"
+  },
+  "homepage": "https://github.com/yourusername/swagger-ts-toolkit#readme",
   "dependencies": {
     "js-yaml": "^4.1.0",
     "chokidar": "^3.5.3",
