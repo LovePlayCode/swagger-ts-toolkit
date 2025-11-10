@@ -10,25 +10,41 @@ const program = new Command();
 program
   .name('swagger-ts-toolkit')
   .description('功能强大的 Swagger/OpenAPI TypeScript 工具包')
-  .version('1.0.0');
+  .version('1.0.1');
 
 program
   .command('generate')
   .alias('gen')
   .description('生成 TypeScript 类型和接口')
   .option('-s, --source <type>', '数据源类型 (auto|local|remote)', 'auto')
-  .option('-S, --service <name>', '服务名称', 'default')
-  .option('-c, --config <path>', '配置文件路径')
+  .option('-S, --service <name>', '服务名称（对应配置文件中的服务key）', 'default')
+  .option('-c, --config <path>', '配置文件路径（默认自动查找）')
   .option('-w, --watch', '监听文件变化并自动重新生成', false)
-  .option('-o, --output <path>', '输出文件路径')
+  .option('-o, --output <path>', '类型定义输出文件路径')
   .option('-e, --endpoints <path>', '端点常量输出路径')
   .option('-f, --functions <path>', 'API函数输出路径')
   .option('--no-api-functions', '禁用API函数生成')
   .option('--api-functions', '启用API函数生成')
+  .addHelpText('after', `
+示例:
+  $ npx stt init                                    # 创建配置文件
+  $ npx stt generate --source local                 # 使用本地文件生成
+  $ npx stt generate --source local -S userApi      # 生成指定服务
+  $ npx stt gen -w                                  # 监听模式
+  $ npx stt gen -o ./types/api.d.ts                 # 自定义输出路径
+  $ npx stt gen --source remote -S production       # 使用远程URL生成
+
+配置文件:
+  默认查找: swagger-ts-toolkit.config.js 或 stt.config.js
+  手动指定: npx stt gen -c ./my-config.js
+`)
   .action(async (options) => {
     try {
       // 加载配置文件
       const fileConfig = await loadConfigFromFile(options.config);
+      
+      // 检查是否有配置
+      const hasConfig = Object.keys(fileConfig).length > 0;
       
       // 合并配置
       const config: Partial<GeneratorConfig> = {
@@ -70,9 +86,30 @@ program
       
       if (!options.watch) {
         console.log('🎉 生成完成！');
+        
+        // 显示生成的文件位置
+        console.log('\n📁 生成的文件：');
+        const finalConfig = generator.getConfig();
+        console.log(`  - 类型定义: ${finalConfig.outputPath}`);
+        console.log(`  - 端点常量: ${finalConfig.endpointsPath}`);
+        if (generateApiFunctions !== false) {
+          console.log(`  - API函数: ${finalConfig.apiFunctionsPath}`);
+        }
       }
     } catch (error) {
       console.error('❌ 生成失败:', (error as Error).message);
+      
+      // 提供更详细的错误信息和解决方案
+      if ((error as Error).message.includes('本地 Swagger 文件不存在')) {
+        console.log('\n💡 解决方案：');
+        console.log('1. 运行 `npx stt init` 创建配置文件');
+        console.log('2. 编辑配置文件，设置正确的 Swagger 文件路径');
+        console.log('3. 或使用命令行参数指定路径：');
+        console.log('   npx stt generate --source local --service myApi');
+        console.log('\n📖 查看配置示例：');
+        console.log('   https://github.com/yourusername/swagger-ts-toolkit#configuration');
+      }
+      
       process.exit(1);
     }
   });

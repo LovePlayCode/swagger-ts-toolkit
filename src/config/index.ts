@@ -64,15 +64,49 @@ export function mergeConfig(userConfig: Partial<GeneratorConfig> = {}): Generato
  * 从文件加载配置
  */
 export async function loadConfigFromFile(configPath?: string): Promise<Partial<GeneratorConfig>> {
+  // 如果没有指定配置文件路径，尝试查找默认配置文件
   if (!configPath) {
+    const fs = await import('node:fs/promises');
+    const path = await import('node:path');
+    
+    // 尝试常见的配置文件名
+    const possibleConfigs = [
+      'swagger-ts-toolkit.config.js',
+      'swagger-ts-toolkit.config.mjs',
+      'swagger-ts-toolkit.config.json',
+      'stt.config.js',
+      'stt.config.mjs',
+      'stt.config.json',
+    ];
+    
+    for (const configFile of possibleConfigs) {
+      try {
+        await fs.access(configFile);
+        // 文件存在，尝试加载
+        const absolutePath = path.resolve(process.cwd(), configFile);
+        console.log(`📋 使用配置文件: ${configFile}`);
+        const { default: config } = await import(absolutePath);
+        return config;
+      } catch {
+        // 文件不存在或加载失败，继续尝试下一个
+        continue;
+      }
+    }
+    
+    // 没有找到配置文件，返回空对象（将使用默认配置）
+    console.log('ℹ️  未找到配置文件，使用默认配置');
     return {};
   }
 
+  // 指定了配置文件路径，尝试加载
   try {
-    const { default: config } = await import(configPath);
+    const path = await import('node:path');
+    const absolutePath = path.resolve(process.cwd(), configPath);
+    const { default: config } = await import(absolutePath);
+    console.log(`📋 使用配置文件: ${configPath}`);
     return config;
   } catch (error) {
-    console.warn(`⚠️  无法加载配置文件 ${configPath}:`, error);
+    console.warn(`⚠️  无法加载配置文件 ${configPath}:`, (error as Error).message);
     return {};
   }
 }
