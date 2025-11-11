@@ -280,6 +280,41 @@ export const typedHttp = {
 
 MIT
 
+## 发布流程
+
+本项目已配置 GitHub Actions 自动发布，每次推送到 `main` 分支时会自动发布到 npm。
+
+### 快速发布新版本
+
+```bash
+# 交互式升级版本（推荐）
+npm run release
+
+# 或使用命令行
+npm run version:patch  # bug 修复: 1.0.3 → 1.0.4
+npm run version:minor  # 新功能: 1.0.3 → 1.1.0
+npm run version:major  # 破坏性更新: 1.0.3 → 2.0.0
+```
+
+### 相关文档
+- 🚀 [快速开始](./NPM_AUTO_PUBLISH_QUICKSTART.md) - 5 分钟配置指南
+- 📖 [完整发布指南](./NPM_AUTO_PUBLISH_GUIDE.md) - 详细配置说明
+- 🔐 [Token 管理指南](./NPM_TOKEN_MANAGEMENT.md) - NPM Token 有效期和更新
+- ⏰ [Token 有效期说明](./TOKEN_EXPIRY_SUMMARY.md) - 重要！Token 会过期
+- 📝 [速查表](./PUBLISH_CHEATSHEET.md) - 常用命令参考
+
+**⚠️ 重要提示：** NPM Token 有有效期（推荐 90 天），请设置日历提醒定期更新！
+
 ## 贡献
 
 欢迎提交 Issue 和 Pull Request！
+
+### 贡献流程
+
+1. Fork 本仓库
+2. 创建特性分支 (`git checkout -b feature/amazing-feature`)
+3. 提交更改 (`git commit -m 'feat: add amazing feature'`)
+4. 推送到分支 (`git push origin feature/amazing-feature`)
+5. 创建 Pull Request
+
+查看 [CONTRIBUTING.md](./CONTRIBUTING.md) 了解更多贡献指南。
