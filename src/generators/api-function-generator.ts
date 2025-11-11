@@ -178,9 +178,10 @@ function extractTypeFromSchema(schema: any, swaggerData?: SwaggerData): string {
       return 'number';
     case 'boolean':
       return 'boolean';
-    case 'array':
+    case 'array': {
       const itemType = extractTypeFromSchema(schema.items, swaggerData);
       return `${itemType}[]`;
+    }
     case 'object':
       return 'Record<string, any>';
     default:
@@ -206,7 +207,7 @@ function resolveReference(ref: string, swaggerData: SwaggerData): any {
 /**
  * 提取请求和响应类型
  */
-function extractTypes(operation: any, swaggerData: SwaggerData, operationId?: string): { requestType: string; responseType: string } {
+function extractTypes(operation: any, swaggerData: SwaggerData, _operationId?: string): { requestType: string; responseType: string } {
   let requestType = 'any';
   let responseType = 'any';
 
