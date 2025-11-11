@@ -1,6 +1,6 @@
 {
   "name": "swagger-ts-toolkit",
-  "version": "1.0.3",
+  "version": "2.0.1",
   "description": "功能强大的 Swagger/OpenAPI TypeScript 工具包 - 自动生成类型定义、API接口和端点常量",
   "type": "module",
   "main": "./dist/index.js",
