@@ -6,6 +6,11 @@ on:
   pull_request:
     branches: [main]
 
+# 添加权限配置
+permissions:
+  contents: write  # 允许创建 tag 和 release
+  packages: write
+
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -46,12 +51,18 @@ jobs:
     needs: test
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    
+    # 显式设置权限
+    permissions:
+      contents: write  # 创建 tag 和 release
+      packages: write
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          # 使用 GITHUB_TOKEN，现在有足够的权限
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Setup Node.js
