@@ -1,13 +1,13 @@
 // 🤖 基于Swagger自动生成的API调用函数 - productApi
 // ⚠️  请勿手动修改此文件
-// 📅 生成时间: 2025-11-10T09:32:53.270Z
+// 📅 生成时间: 2025-11-11T02:14:58.167Z
 
 import type { components } from './api-generated';
 
-// ==================== Request 接口定义 ====================
+// ==================== 请求配置接口 ====================
 
 /**
- * 请求配置接口（兼容 axios）
+ * 通用请求配置接口
  */
 export interface ApiRequestConfig {
   url: string;
@@ -19,74 +19,68 @@ export interface ApiRequestConfig {
 }
 
 /**
- * 自定义请求函数类型
- * 用户可以提供自己的请求实现（axios、fetch、或任何其他 HTTP 客户端）
+ * 请求客户端接口
  */
-export type RequestFunction = <T = any>(config: ApiRequestConfig) => Promise<T>;
-
-// ==================== 默认 axios 实现 ====================
-
-/**
- * 默认的请求函数（使用 axios）
- * 用户可以通过 setRequestFunction 替换为自己的实现
- */
-let requestFunction: RequestFunction;
-
-/**
- * 设置自定义请求函数
- * 
- * @example
- * // 使用自定义的 axios 实例
- * import axios from 'axios';
- * 
- * const customAxios = axios.create({
- *   baseURL: 'https://api.example.com',
- *   timeout: 5000,
- * });
- * 
- * // 添加拦截器
- * customAxios.interceptors.request.use(config => {
- *   config.headers.Authorization = `Bearer ${token}`;
- *   return config;
- * });
- * 
- * setRequestFunction(customAxios.request.bind(customAxios));
- * 
- * @example
- * // 使用 fetch
- * setRequestFunction(async (config) => {
- *   const response = await fetch(config.url, {
- *     method: config.method,
- *     headers: config.headers,
- *     body: config.data ? JSON.stringify(config.data) : undefined,
- *   });
- *   return response.json();
- * });
- */
-export function setRequestFunction(fn: RequestFunction): void {
-  requestFunction = fn;
+export interface RequestClient {
+  request<T = any>(config: ApiRequestConfig): Promise<T>;
 }
 
 /**
- * 获取当前的请求函数
+ * API客户端配置
  */
-function getRequestFunction(): RequestFunction {
-  if (!requestFunction) {
-    // 尝试使用 axios 作为默认实现
+export interface ApiClientConfig {
+  baseURL?: string;
+  timeout?: number;
+  headers?: Record<string, string>;
+  customClient?: RequestClient;
+}
+
+// ==================== API客户端管理 ====================
+
+let globalApiClient: RequestClient | null = null;
+
+/**
+ * 配置全局API客户端
+ * @param config 客户端配置
+ */
+export function configureApiClient(config: ApiClientConfig = {}): void {
+  if (config.customClient) {
+    // 使用用户提供的自定义客户端
+    globalApiClient = config.customClient;
+  } else {
+    // 创建默认的Axios客户端
+    let axios: any;
     try {
-      const axios = require('axios');
-      const instance = axios.create({
-        baseURL: process.env.REACT_APP_API_BASE_URL || process.env.VUE_APP_API_BASE_URL || '/api',
-        timeout: 10000,
-      });
-      requestFunction = instance.request.bind(instance);
+      axios = require('axios');
     } catch (e) {
-      throw new Error(
-        'axios is not installed. Please install axios or provide a custom request function using setRequestFunction().'
-      );
+      throw new Error('axios not found. Please install axios or provide customClient.');
     }
+
+    const axiosInstance = axios.create({
+      baseURL: config.baseURL || process.env.REACT_APP_API_BASE_URL || process.env.VUE_APP_API_BASE_URL || '/api',
+      timeout: config.timeout || 10000,
+      headers: {
+        'Content-Type': 'application/json',
+        ...config.headers,
+      },
+    });
+
+    globalApiClient = {
+      request: <T = any>(requestConfig: ApiRequestConfig): Promise<T> => {
+        return axiosInstance.request(requestConfig).then((response: any) => response.data);
+      },
+    };
   }
-  return requestFunction;
+}
+
+/**
+ * 获取当前API客户端
+ */
+export function getApiClient(): RequestClient {
+  if (!globalApiClient) {
+    configureApiClient();
+  }
+  return globalApiClient!;
 }
 
 // ==================== 工具函数 ====================
@@ -131,7 +125,7 @@ export const productApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['ProductListResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['ProductListResponse']>(requestConfig);
   },
 
   /**
@@ -149,7 +143,7 @@ export const productApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['ProductResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['ProductResponse']>(requestConfig);
   },
 
   /**
@@ -166,7 +160,7 @@ export const productApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['ProductResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['ProductResponse']>(requestConfig);
   },
 
   /**
@@ -185,7 +179,7 @@ export const productApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['ProductResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['ProductResponse']>(requestConfig);
   },
 
   /**
@@ -202,7 +196,7 @@ export const productApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<Record<string, any>>(requestConfig);
+    return getApiClient().request<Record<string, any>>(requestConfig);
   },
 
   /**
@@ -221,7 +215,7 @@ export const productApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<Record<string, any>>(requestConfig);
+    return getApiClient().request<Record<string, any>>(requestConfig);
   },
 
   /**
@@ -238,7 +232,7 @@ export const productApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<Record<string, any>>(requestConfig);
+    return getApiClient().request<Record<string, any>>(requestConfig);
   },
 
   /**
@@ -257,97 +251,57 @@ export const productApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<Record<string, any>>(requestConfig);
+    return getApiClient().request<Record<string, any>>(requestConfig);
   },
 
 };
 
 // ==================== 导出 ====================
 
-// 导出类型定义
 export type productApiApiType = typeof productApiApi;
-
-// 导出常用类型
 export type { components } from './api-generated';
 
 // ==================== 使用示例 ====================
 
 /*
-// 基础使用（使用默认 axios）
+// 方式1: 使用默认配置
 import { productApiApi } from './productApi';
+const result = await productApiApi.someMethod();
 
-const user = await productApiApi.getUserById({ pathParams: { id: 123 } });
-
-// 使用自定义 axios 实例（推荐）
-import axios from 'axios';
-import { productApiApi, setRequestFunction } from './productApi';
-
-// 创建自定义 axios 实例
-const customAxios = axios.create({
+// 方式2: 自定义baseURL和headers
+import { productApiApi, configureApiClient } from './productApi';
+configureApiClient({
   baseURL: 'https://api.example.com',
   timeout: 5000,
+  headers: { 'X-Custom-Header': 'value' }
 });
 
-// 添加请求拦截器（认证、日志等）
-customAxios.interceptors.request.use(config => {
+// 方式3: 使用完全自定义的客户端
+import axios from 'axios';
+import { productApiApi, configureApiClient } from './productApi';
+
+const customAxios = axios.create({
+  baseURL: 'https://api.example.com'
+});
+
+// 添加拦截器
+customAxios.interceptors.request.use((config) => {
   const token = localStorage.getItem('token');
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  console.log('[API Request]', config.method, config.url);
+  if (token) config.headers.Authorization = `Bearer ${token}`;
   return config;
 });
 
-// 添加响应拦截器（错误处理、数据转换等）
 customAxios.interceptors.response.use(
-  response => {
-    console.log('[API Response]', response.status);
-    return response.data; // 直接返回数据部分
-  },
-  error => {
-    if (error.response?.status === 401) {
-      // 处理未授权
-      localStorage.removeItem('token');
-      window.location.href = '/login';
-    }
-    console.error('[API Error]', error);
+  (response) => response.data,
+  (error) => {
+    if (error.response?.status === 401) window.location.href = '/login';
     return Promise.reject(error);
   }
 );
 
-// 设置自定义请求函数（只需设置一次，全局生效）
-setRequestFunction(customAxios.request.bind(customAxios));
-
-// 现在所有 API 调用都会使用你的自定义 axios 实例
-const users = await productApiApi.getUserList({ queryParams: { page: 1 } });
-
-// 使用 fetch 代替 axios
-import { setRequestFunction } from './productApi';
-
-setRequestFunction(async (config) => {
-  const url = new URL(config.url, 'https://api.example.com');
-  
-  // 添加查询参数
-  if (config.params) {
-    Object.entries(config.params).forEach(([key, value]) => {
-      url.searchParams.append(key, String(value));
-    });
+configureApiClient({
+  customClient: {
+    request: (config) => customAxios.request(config)
   }
-  
-  // 发送请求
-  const response = await fetch(url.toString(), {
-    method: config.method,
-    headers: {
-      'Content-Type': 'application/json',
-      ...config.headers,
-    },
-    body: config.data ? JSON.stringify(config.data) : undefined,
-  });
-  
-  if (!response.ok) {
-    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-  }
-  
-  return response.json();
 });
 */

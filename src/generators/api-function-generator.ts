@@ -252,7 +252,7 @@ function generateApiFunctionsContent(apiFunctions: ApiFunctionInfo[], serviceNam
 
 import type { components } from './api-generated';
 
-// ==================== 自定义Request支持 ====================
+// ==================== 请求配置接口 ====================
 
 /**
  * 通用请求配置接口
@@ -263,24 +263,14 @@ export interface ApiRequestConfig {
   data?: any;
   params?: Record<string, any>;
   headers?: Record<string, string>;
-  timeout?: number;
   [key: string]: any;
 }
 
 /**
- * 请求客户端接口 - 支持任何HTTP客户端实现
+ * 请求客户端接口
  */
 export interface RequestClient {
   request<T = any>(config: ApiRequestConfig): Promise<T>;
-}
-
-/**
- * 请求中间件接口
- */
-export interface RequestMiddleware {
-  onRequest?: (config: ApiRequestConfig) => ApiRequestConfig | Promise<ApiRequestConfig>;
-  onResponse?: <T>(response: T) => T | Promise<T>;
-  onError?: (error: any) => Promise<any>;
 }
 
 /**
@@ -290,32 +280,31 @@ export interface ApiClientConfig {
   baseURL?: string;
   timeout?: number;
   headers?: Record<string, string>;
-  middlewares?: RequestMiddleware[];
   customClient?: RequestClient;
 }
 
-// ==================== 默认实现 (Axios) ====================
+// ==================== API客户端管理 ====================
 
-// 默认使用axios，但支持替换为任何HTTP客户端
-let defaultAxios: any;
-try {
-  defaultAxios = require('axios');
-} catch (e) {
-  console.warn('axios not found, please install axios or provide custom request client');
-}
+let globalApiClient: RequestClient | null = null;
 
 /**
- * 默认的Axios适配器
+ * 配置全局API客户端
+ * @param config 客户端配置
  */
-class AxiosRequestClient implements RequestClient {
-  private client: any;
-  
-  constructor(config: ApiClientConfig) {
-    if (!defaultAxios) {
-      throw new Error('axios is required for default client. Install axios or provide custom client.');
+export function configureApiClient(config: ApiClientConfig = {}): void {
+  if (config.customClient) {
+    // 使用用户提供的自定义客户端
+    globalApiClient = config.customClient;
+  } else {
+    // 创建默认的Axios客户端
+    let axios: any;
+    try {
+      axios = require('axios');
+    } catch (e) {
+      throw new Error('axios not found. Please install axios or provide customClient.');
     }
-    
-    this.client = defaultAxios.create({
+
+    const axiosInstance = axios.create({
       baseURL: config.baseURL || process.env.REACT_APP_API_BASE_URL || process.env.VUE_APP_API_BASE_URL || '/api',
       timeout: config.timeout || 10000,
       headers: {
@@ -324,147 +313,11 @@ class AxiosRequestClient implements RequestClient {
       },
     });
 
-    // 应用中间件
-    this.setupMiddlewares(config.middlewares || []);
-  }
-
-  private setupMiddlewares(middlewares: RequestMiddleware[]) {
-    // 请求拦截器
-    this.client.interceptors.request.use(
-      async (config: any) => {
-        let processedConfig = config;
-        
-        // 应用所有请求中间件
-        for (const middleware of middlewares) {
-          if (middleware.onRequest) {
-            processedConfig = await middleware.onRequest(processedConfig);
-          }
-        }
-        
-        return processedConfig;
+    globalApiClient = {
+      request: <T = any>(requestConfig: ApiRequestConfig): Promise<T> => {
+        return axiosInstance.request(requestConfig).then((response: any) => response.data);
       },
-      async (error: any) => {
-        // 应用错误中间件
-        for (const middleware of middlewares) {
-          if (middleware.onError) {
-            try {
-              return await middleware.onError(error);
-            } catch (e) {
-              // 继续到下一个中间件
-            }
-          }
-        }
-        return Promise.reject(error);
-      }
-    );
-
-    // 响应拦截器
-    this.client.interceptors.response.use(
-      async (response: any) => {
-        let processedResponse = response.data;
-        
-        // 应用所有响应中间件
-        for (const middleware of middlewares) {
-          if (middleware.onResponse) {
-            processedResponse = await middleware.onResponse(processedResponse);
-          }
-        }
-        
-        return processedResponse;
-      },
-      async (error: any) => {
-        // 应用错误中间件
-        for (const middleware of middlewares) {
-          if (middleware.onError) {
-            try {
-              return await middleware.onError(error);
-            } catch (e) {
-              // 继续到下一个中间件
-            }
-          }
-        }
-        return Promise.reject(error);
-      }
-    );
-  }
-
-  async request<T = any>(config: ApiRequestConfig): Promise<T> {
-    return this.client.request(config);
-  }
-}
-
-// ==================== 内置中间件 ====================
-
-/**
- * 认证中间件
- */
-export const authMiddleware: RequestMiddleware = {
-  onRequest: (config) => {
-    const token = localStorage.getItem('token') || sessionStorage.getItem('token');
-    if (token) {
-      config.headers = {
-        ...config.headers,
-        Authorization: ` + '`Bearer ${token}`' + `,
-      };
-    }
-    return config;
-  },
-};
-
-/**
- * 错误处理中间件
- */
-export const errorHandlingMiddleware: RequestMiddleware = {
-  onError: (error) => {
-    console.error('API请求错误:', error);
-    
-    if (error.response?.status === 401) {
-      localStorage.removeItem('token');
-      sessionStorage.removeItem('token');
-      if (typeof window !== 'undefined') {
-        window.location.href = '/login';
-      }
-    }
-    
-    return Promise.reject(error);
-  },
-};
-
-/**
- * 日志中间件
- */
-export const loggingMiddleware: RequestMiddleware = {
-  onRequest: (config) => {
-    console.log(` + '`[API Request] ${config.method} ${config.url}`' + `, config);
-    return config;
-  },
-  onResponse: (response) => {
-    console.log('[API Response]', response);
-    return response;
-  },
-};
-
-// ==================== API客户端管理 ====================
-
-let globalApiClient: RequestClient;
-
-/**
- * 配置全局API客户端
- */
-export function configureApiClient(config: ApiClientConfig = {}): void {
-  if (config.customClient) {
-    // 使用用户提供的自定义客户端
-    globalApiClient = config.customClient;
-  } else {
-    // 使用默认的Axios客户端
-    globalApiClient = new AxiosRequestClient({
-      ...config,
-      middlewares: [
-        authMiddleware,
-        errorHandlingMiddleware,
-        ...(config.middlewares || [])
-      ]
-    });
+    };
   }
 }
 
@@ -473,10 +326,9 @@ export function configureApiClient(config: ApiClientConfig = {}): void {
  */
 export function getApiClient(): RequestClient {
   if (!globalApiClient) {
-    // 使用默认配置初始化
     configureApiClient();
   }
-  return globalApiClient;
+  return globalApiClient!;
 }
 
 // ==================== 工具函数 ====================
@@ -490,17 +342,6 @@ function buildPath(path: string, pathParams: Record<string, any> = {}): string {
     builtPath = builtPath.replace(` + '`{${key}}`' + `, encodeURIComponent(String(value)));
   }
   return builtPath;
-}
-
-// ==================== 自动初始化 ====================
-
-// 自动使用默认配置初始化（用户也可以重新配置）
-if (typeof window !== 'undefined' || typeof global !== 'undefined') {
-  try {
-    configureApiClient();
-  } catch (e) {
-    console.warn('Failed to initialize default API client:', e.message);
-  }
 }
 
 // ==================== API函数集合 ====================
@@ -520,31 +361,51 @@ export const ${serviceNameCamel}Api = {
 
 // ==================== 导出 ====================
 
-// 导出类型定义
 export type ${serviceNameCamel}ApiType = typeof ${serviceNameCamel}Api;
-
-// 导出常用类型
 export type { components } from './api-generated';
 
 // ==================== 使用示例 ====================
 
 /*
-// 方式1: 使用默认配置（自动初始化）
+// 方式1: 使用默认配置
 import { ${serviceNameCamel}Api } from './${serviceName}';
+const result = await ${serviceNameCamel}Api.someMethod();
 
-// 方式2: 自定义配置
+// 方式2: 自定义baseURL和headers
 import { ${serviceNameCamel}Api, configureApiClient } from './${serviceName}';
 configureApiClient({
   baseURL: 'https://api.example.com',
   timeout: 5000,
-  middlewares: [customMiddleware]
+  headers: { 'X-Custom-Header': 'value' }
 });
 
-// 方式3: 使用完全自定义的request客户端
+// 方式3: 使用完全自定义的客户端
+import axios from 'axios';
 import { ${serviceNameCamel}Api, configureApiClient } from './${serviceName}';
-import { myCustomClient } from './my-request-client';
+
+const customAxios = axios.create({
+  baseURL: 'https://api.example.com'
+});
+
+// 添加拦截器
+customAxios.interceptors.request.use((config) => {
+  const token = localStorage.getItem('token');
+  if (token) config.headers.Authorization = \`Bearer \${token}\`;
+  return config;
+});
+
+customAxios.interceptors.response.use(
+  (response) => response.data,
+  (error) => {
+    if (error.response?.status === 401) window.location.href = '/login';
+    return Promise.reject(error);
+  }
+);
+
 configureApiClient({
-  customClient: myCustomClient
+  customClient: {
+    request: (config) => customAxios.request(config)
+  }
 });
 */
 `;

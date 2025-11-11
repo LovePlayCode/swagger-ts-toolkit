@@ -1,13 +1,13 @@
 // 🤖 基于Swagger自动生成的API调用函数 - userApi
 // ⚠️  请勿手动修改此文件
-// 📅 生成时间: 2025-11-10T09:32:52.962Z
+// 📅 生成时间: 2025-11-11T02:16:40.368Z
 
 import type { components } from './api-generated';
 
-// ==================== Request 接口定义 ====================
+// ==================== 请求配置接口 ====================
 
 /**
- * 请求配置接口（兼容 axios）
+ * 通用请求配置接口
  */
 export interface ApiRequestConfig {
   url: string;
@@ -19,74 +19,68 @@ export interface ApiRequestConfig {
 }
 
 /**
- * 自定义请求函数类型
- * 用户可以提供自己的请求实现（axios、fetch、或任何其他 HTTP 客户端）
+ * 请求客户端接口
  */
-export type RequestFunction = <T = any>(config: ApiRequestConfig) => Promise<T>;
-
-// ==================== 默认 axios 实现 ====================
-
-/**
- * 默认的请求函数（使用 axios）
- * 用户可以通过 setRequestFunction 替换为自己的实现
- */
-let requestFunction: RequestFunction;
-
-/**
- * 设置自定义请求函数
- * 
- * @example
- * // 使用自定义的 axios 实例
- * import axios from 'axios';
- * 
- * const customAxios = axios.create({
- *   baseURL: 'https://api.example.com',
- *   timeout: 5000,
- * });
- * 
- * // 添加拦截器
- * customAxios.interceptors.request.use(config => {
- *   config.headers.Authorization = `Bearer ${token}`;
- *   return config;
- * });
- * 
- * setRequestFunction(customAxios.request.bind(customAxios));
- * 
- * @example
- * // 使用 fetch
- * setRequestFunction(async (config) => {
- *   const response = await fetch(config.url, {
- *     method: config.method,
- *     headers: config.headers,
- *     body: config.data ? JSON.stringify(config.data) : undefined,
- *   });
- *   return response.json();
- * });
- */
-export function setRequestFunction(fn: RequestFunction): void {
-  requestFunction = fn;
+export interface RequestClient {
+  request<T = any>(config: ApiRequestConfig): Promise<T>;
 }
 
 /**
- * 获取当前的请求函数
+ * API客户端配置
  */
-function getRequestFunction(): RequestFunction {
-  if (!requestFunction) {
-    // 尝试使用 axios 作为默认实现
+export interface ApiClientConfig {
+  baseURL?: string;
+  timeout?: number;
+  headers?: Record<string, string>;
+  customClient?: RequestClient;
+}
+
+// ==================== API客户端管理 ====================
+
+let globalApiClient: RequestClient | null = null;
+
+/**
+ * 配置全局API客户端
+ * @param config 客户端配置
+ */
+export function configureApiClient(config: ApiClientConfig = {}): void {
+  if (config.customClient) {
+    // 使用用户提供的自定义客户端
+    globalApiClient = config.customClient;
+  } else {
+    // 创建默认的Axios客户端
+    let axios: any;
     try {
-      const axios = require('axios');
-      const instance = axios.create({
-        baseURL: process.env.REACT_APP_API_BASE_URL || process.env.VUE_APP_API_BASE_URL || '/api',
-        timeout: 10000,
-      });
-      requestFunction = instance.request.bind(instance);
+      axios = require('axios');
     } catch (e) {
-      throw new Error(
-        'axios is not installed. Please install axios or provide a custom request function using setRequestFunction().'
-      );
+      throw new Error('axios not found. Please install axios or provide customClient.');
     }
+
+    const axiosInstance = axios.create({
+      baseURL: config.baseURL || process.env.REACT_APP_API_BASE_URL || process.env.VUE_APP_API_BASE_URL || '/api',
+      timeout: config.timeout || 10000,
+      headers: {
+        'Content-Type': 'application/json',
+        ...config.headers,
+      },
+    });
+
+    globalApiClient = {
+      request: <T = any>(requestConfig: ApiRequestConfig): Promise<T> => {
+        return axiosInstance.request(requestConfig).then((response: any) => response.data);
+      },
+    };
   }
-  return requestFunction;
+}
+
+/**
+ * 获取当前API客户端
+ */
+export function getApiClient(): RequestClient {
+  if (!globalApiClient) {
+    configureApiClient();
+  }
+  return globalApiClient!;
 }
 
 // ==================== 工具函数 ====================
@@ -123,7 +117,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.backend.v1.GetAppSettingResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.backend.v1.GetAppSettingResponse']>(requestConfig);
   },
 
   /**
@@ -141,7 +135,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['system.v1.GetWebCosTempKeyReply']>(requestConfig);
+    return getApiClient().request<components['schemas']['system.v1.GetWebCosTempKeyReply']>(requestConfig);
   },
 
   /**
@@ -159,7 +153,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.backend.v1.GetCommunityCreditResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.backend.v1.GetCommunityCreditResponse']>(requestConfig);
   },
 
   /**
@@ -177,7 +171,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.backend.v1.GetHelpSummaryResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.backend.v1.GetHelpSummaryResponse']>(requestConfig);
   },
 
   /**
@@ -195,7 +189,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.backend.v1.GetDeveloperSettingsResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.backend.v1.GetDeveloperSettingsResponse']>(requestConfig);
   },
 
   /**
@@ -213,7 +207,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.backend.v1.UpdateDeveloperSettingsResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.backend.v1.UpdateDeveloperSettingsResponse']>(requestConfig);
   },
 
   /**
@@ -231,7 +225,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.help.v1.ListCategoriesResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.help.v1.ListCategoriesResponse']>(requestConfig);
   },
 
   /**
@@ -249,7 +243,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.backend.v1.GetUserPermissionsResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.backend.v1.GetUserPermissionsResponse']>(requestConfig);
   },
 
   /**
@@ -267,7 +261,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.backend.v1.LoginByPhoneResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.backend.v1.LoginByPhoneResponse']>(requestConfig);
   },
 
   /**
@@ -285,7 +279,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.backend.v1.LogoutResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.backend.v1.LogoutResponse']>(requestConfig);
   },
 
   /**
@@ -303,7 +297,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.backend.v1.SendLoginCodeResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.backend.v1.SendLoginCodeResponse']>(requestConfig);
   },
 
   /**
@@ -321,7 +315,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.backend.v1.UpdateOrgUserResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.backend.v1.UpdateOrgUserResponse']>(requestConfig);
   },
 
   /**
@@ -339,7 +333,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.backend.v1.GetBanksResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.backend.v1.GetBanksResponse']>(requestConfig);
   },
 
   /**
@@ -357,7 +351,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.backend.v1.ApplyEcommercementResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.backend.v1.ApplyEcommercementResponse']>(requestConfig);
   },
 
   /**
@@ -375,7 +369,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.backend.v1.GetEcommerceApplymentResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.backend.v1.GetEcommerceApplymentResponse']>(requestConfig);
   },
 
   /**
@@ -393,7 +387,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.backend.v1.GetEcommerceApplymentStatusResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.backend.v1.GetEcommerceApplymentStatusResponse']>(requestConfig);
   },
 
   /**
@@ -411,7 +405,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.backend.v1.GetStaticDataResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.backend.v1.GetStaticDataResponse']>(requestConfig);
   },
 
   /**
@@ -429,7 +423,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.backend.v1.ApproveResidentApplyResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.backend.v1.ApproveResidentApplyResponse']>(requestConfig);
   },
 
   /**
@@ -447,7 +441,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.backend.v1.GetResidentApplyResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.backend.v1.GetResidentApplyResponse']>(requestConfig);
   },
 
   /**
@@ -465,7 +459,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.backend.v1.ListResidentApplyResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.backend.v1.ListResidentApplyResponse']>(requestConfig);
   },
 
   /**
@@ -483,7 +477,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.backend.v1.RefuseResidentApplyResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.backend.v1.RefuseResidentApplyResponse']>(requestConfig);
   },
 
   /**
@@ -501,7 +495,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.backend.v1.ListHelpServiceRecordsResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.backend.v1.ListHelpServiceRecordsResponse']>(requestConfig);
   },
 
   /**
@@ -519,7 +513,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.backend.v1.DeleteAreaResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.backend.v1.DeleteAreaResponse']>(requestConfig);
   },
 
   /**
@@ -537,7 +531,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.backend.v1.ListAreasResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.backend.v1.ListAreasResponse']>(requestConfig);
   },
 
   /**
@@ -555,7 +549,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.backend.v1.SelectAreaResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.backend.v1.SelectAreaResponse']>(requestConfig);
   },
 
   /**
@@ -573,7 +567,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.backend.v1.ServiceTypeAuditStatusResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.backend.v1.ServiceTypeAuditStatusResponse']>(requestConfig);
   },
 
   /**
@@ -591,7 +585,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.backend.v1.ListServiceTypeAuditsResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.backend.v1.ListServiceTypeAuditsResponse']>(requestConfig);
   },
 
   /**
@@ -609,7 +603,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.backend.v1.GetAllCategoriesResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.backend.v1.GetAllCategoriesResponse']>(requestConfig);
   },
 
   /**
@@ -627,7 +621,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.backend.v1.DeleteServiceTypeResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.backend.v1.DeleteServiceTypeResponse']>(requestConfig);
   },
 
   /**
@@ -645,7 +639,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.backend.v1.FilterAreaResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.backend.v1.FilterAreaResponse']>(requestConfig);
   },
 
   /**
@@ -663,7 +657,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.backend.v1.ListRecommendationTagsResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.backend.v1.ListRecommendationTagsResponse']>(requestConfig);
   },
 
   /**
@@ -681,7 +675,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.backend.v1.UpdateServiceTypeRecommendationTagsResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.backend.v1.UpdateServiceTypeRecommendationTagsResponse']>(requestConfig);
   },
 
   /**
@@ -699,7 +693,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.backend.v1.SortServiceAuditTypeResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.backend.v1.SortServiceAuditTypeResponse']>(requestConfig);
   },
 
   /**
@@ -717,7 +711,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.backend.v1.ListServiceTypeSubmissionsResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.backend.v1.ListServiceTypeSubmissionsResponse']>(requestConfig);
   },
 
   /**
@@ -735,7 +729,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.backend.v1.ServiceTypeSubmissionResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.backend.v1.ServiceTypeSubmissionResponse']>(requestConfig);
   },
 
   /**
@@ -753,7 +747,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.backend.v1.CheckStaffApplyResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.backend.v1.CheckStaffApplyResponse']>(requestConfig);
   },
 
   /**
@@ -771,7 +765,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.backend.v1.ImportStaffByCosUrlResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.backend.v1.ImportStaffByCosUrlResponse']>(requestConfig);
   },
 
   /**
@@ -789,7 +783,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.backend.v1.ListImportErrRecordsResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.backend.v1.ListImportErrRecordsResponse']>(requestConfig);
   },
 
   /**
@@ -807,7 +801,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.backend.v1.ApplyStaffWithInviteLinkResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.backend.v1.ApplyStaffWithInviteLinkResponse']>(requestConfig);
   },
 
   /**
@@ -825,7 +819,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.backend.v1.ApproveStaffApplyResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.backend.v1.ApproveStaffApplyResponse']>(requestConfig);
   },
 
   /**
@@ -843,7 +837,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.backend.v1.ListStaffApplyResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.backend.v1.ListStaffApplyResponse']>(requestConfig);
   },
 
   /**
@@ -861,7 +855,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.backend.v1.CheckIfMiniUserResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.backend.v1.CheckIfMiniUserResponse']>(requestConfig);
   },
 
   /**
@@ -879,7 +873,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.backend.v1.ReImportOrganizationUsersResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.backend.v1.ReImportOrganizationUsersResponse']>(requestConfig);
   },
 
   /**
@@ -897,7 +891,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.backend.v1.SendJoinOrgSmsResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.backend.v1.SendJoinOrgSmsResponse']>(requestConfig);
   },
 
   /**
@@ -915,7 +909,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.backend.v1.DeleteUserResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.backend.v1.DeleteUserResponse']>(requestConfig);
   },
 
   /**
@@ -933,7 +927,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.backend.v1.DeleteUserResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.backend.v1.DeleteUserResponse']>(requestConfig);
   },
 
   /**
@@ -951,7 +945,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.backend.v1.ImportOrganizationUsersResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.backend.v1.ImportOrganizationUsersResponse']>(requestConfig);
   },
 
   /**
@@ -969,7 +963,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['system.v1.RealNameReply']>(requestConfig);
+    return getApiClient().request<components['schemas']['system.v1.RealNameReply']>(requestConfig);
   },
 
   /**
@@ -987,7 +981,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.backend.v1.SearchUserByPhoneResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.backend.v1.SearchUserByPhoneResponse']>(requestConfig);
   },
 
   /**
@@ -1005,7 +999,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.backend.v1.UpdateUserResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.backend.v1.UpdateUserResponse']>(requestConfig);
   },
 
   /**
@@ -1023,7 +1017,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.backend.v1.ListOrgUserResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.backend.v1.ListOrgUserResponse']>(requestConfig);
   },
 
   /**
@@ -1041,7 +1035,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.backend.v1.ApplyOrganizationResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.backend.v1.ApplyOrganizationResponse']>(requestConfig);
   },
 
   /**
@@ -1059,7 +1053,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.backend.v1.ApproveOrganizationApplyResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.backend.v1.ApproveOrganizationApplyResponse']>(requestConfig);
   },
 
   /**
@@ -1077,7 +1071,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.backend.v1.GetOrganizationApplyResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.backend.v1.GetOrganizationApplyResponse']>(requestConfig);
   },
 
   /**
@@ -1095,7 +1089,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.backend.v1.ListOrganizationApplyResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.backend.v1.ListOrganizationApplyResponse']>(requestConfig);
   },
 
   /**
@@ -1113,7 +1107,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.backend.v1.RejectOrganizationApplyResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.backend.v1.RejectOrganizationApplyResponse']>(requestConfig);
   },
 
   /**
@@ -1131,7 +1125,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.backend.v1.ApplyOrgCerticationResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.backend.v1.ApplyOrgCerticationResponse']>(requestConfig);
   },
 
   /**
@@ -1149,7 +1143,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.backend.v1.ApproveOrgCerticationApplyResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.backend.v1.ApproveOrgCerticationApplyResponse']>(requestConfig);
   },
 
   /**
@@ -1167,7 +1161,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.backend.v1.ListOrgCerticationApplyResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.backend.v1.ListOrgCerticationApplyResponse']>(requestConfig);
   },
 
   /**
@@ -1185,7 +1179,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.backend.v1.RejectOrgCerticationApplyResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.backend.v1.RejectOrgCerticationApplyResponse']>(requestConfig);
   },
 
   /**
@@ -1203,7 +1197,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.backend.v1.GetOrgCerticationsResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.backend.v1.GetOrgCerticationsResponse']>(requestConfig);
   },
 
   /**
@@ -1221,7 +1215,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.backend.v1.CreateOrganizationResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.backend.v1.CreateOrganizationResponse']>(requestConfig);
   },
 
   /**
@@ -1239,7 +1233,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.backend.v1.GetOrganizationDetailResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.backend.v1.GetOrganizationDetailResponse']>(requestConfig);
   },
 
   /**
@@ -1257,7 +1251,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.backend.v1.ListOrganizationsResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.backend.v1.ListOrganizationsResponse']>(requestConfig);
   },
 
   /**
@@ -1275,7 +1269,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.backend.v1.UpdateOrganizationPaymentMethodResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.backend.v1.UpdateOrganizationPaymentMethodResponse']>(requestConfig);
   },
 
   /**
@@ -1293,7 +1287,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.backend.v1.ListCommunitiesByServiceNetworkResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.backend.v1.ListCommunitiesByServiceNetworkResponse']>(requestConfig);
   },
 
   /**
@@ -1311,7 +1305,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.backend.v1.AddServiceNetworkResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.backend.v1.AddServiceNetworkResponse']>(requestConfig);
   },
 
   /**
@@ -1329,7 +1323,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.backend.v1.DeleteServiceNetworkResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.backend.v1.DeleteServiceNetworkResponse']>(requestConfig);
   },
 
   /**
@@ -1347,7 +1341,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.backend.v1.ListServiceNetworkResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.backend.v1.ListServiceNetworkResponse']>(requestConfig);
   },
 
   /**
@@ -1365,7 +1359,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.backend.v1.UpdateOrganizationResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.backend.v1.UpdateOrganizationResponse']>(requestConfig);
   },
 
   /**
@@ -1383,7 +1377,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.v1.activity.GetNearbyActivitiesResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.v1.activity.GetNearbyActivitiesResponse']>(requestConfig);
   },
 
   /**
@@ -1401,7 +1395,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.v1.activity.CancelCheckinResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.v1.activity.CancelCheckinResponse']>(requestConfig);
   },
 
   /**
@@ -1419,7 +1413,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.v1.activity.CancelEnrollResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.v1.activity.CancelEnrollResponse']>(requestConfig);
   },
 
   /**
@@ -1437,7 +1431,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.v1.activity.CheckCancelEnrollPermissionResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.v1.activity.CheckCancelEnrollPermissionResponse']>(requestConfig);
   },
 
   /**
@@ -1455,7 +1449,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.v1.activity.CheckinActivityResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.v1.activity.CheckinActivityResponse']>(requestConfig);
   },
 
   /**
@@ -1473,7 +1467,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.activity.v1.CreateCommentResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.activity.v1.CreateCommentResponse']>(requestConfig);
   },
 
   /**
@@ -1491,7 +1485,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.activity.v1.DeleteCommentResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.activity.v1.DeleteCommentResponse']>(requestConfig);
   },
 
   /**
@@ -1509,7 +1503,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.activity.v1.LikeResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.activity.v1.LikeResponse']>(requestConfig);
   },
 
   /**
@@ -1527,7 +1521,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.activity.v1.GetUserLikedCommentsResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.activity.v1.GetUserLikedCommentsResponse']>(requestConfig);
   },
 
   /**
@@ -1545,7 +1539,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.activity.v1.ListCommentsResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.activity.v1.ListCommentsResponse']>(requestConfig);
   },
 
   /**
@@ -1563,7 +1557,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.activity.v1.ListUserCommentsByActivityResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.activity.v1.ListUserCommentsByActivityResponse']>(requestConfig);
   },
 
   /**
@@ -1581,7 +1575,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.activity.v1.LikeResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.activity.v1.LikeResponse']>(requestConfig);
   },
 
   /**
@@ -1599,7 +1593,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.v1.activity.CreateActivityResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.v1.activity.CreateActivityResponse']>(requestConfig);
   },
 
   /**
@@ -1617,7 +1611,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.v1.activity.CreateMomentResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.v1.activity.CreateMomentResponse']>(requestConfig);
   },
 
   /**
@@ -1635,7 +1629,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.v1.activity.CreateActivityTemplateResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.v1.activity.CreateActivityTemplateResponse']>(requestConfig);
   },
 
   /**
@@ -1653,7 +1647,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.v1.activity.ListDefaultActivitiesResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.v1.activity.ListDefaultActivitiesResponse']>(requestConfig);
   },
 
   /**
@@ -1671,7 +1665,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.v1.activity.DeleteActivityResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.v1.activity.DeleteActivityResponse']>(requestConfig);
   },
 
   /**
@@ -1689,7 +1683,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.v1.activity.DeleteMomentResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.v1.activity.DeleteMomentResponse']>(requestConfig);
   },
 
   /**
@@ -1707,7 +1701,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.v1.activity.EnrollActivityResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.v1.activity.EnrollActivityResponse']>(requestConfig);
   },
 
   /**
@@ -1725,7 +1719,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.v1.activity.ExportActivityCheckinListResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.v1.activity.ExportActivityCheckinListResponse']>(requestConfig);
   },
 
   /**
@@ -1743,7 +1737,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.v1.activity.GenerateCheckinQRCodeResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.v1.activity.GenerateCheckinQRCodeResponse']>(requestConfig);
   },
 
   /**
@@ -1761,7 +1755,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.v1.activity.GenerateShareResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.v1.activity.GenerateShareResponse']>(requestConfig);
   },
 
   /**
@@ -1779,7 +1773,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.v1.activity.GetActivityResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.v1.activity.GetActivityResponse']>(requestConfig);
   },
 
   /**
@@ -1797,7 +1791,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.v1.activity.GetActivityCustomConfigResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.v1.activity.GetActivityCustomConfigResponse']>(requestConfig);
   },
 
   /**
@@ -1815,7 +1809,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.v1.activity.GetActivityByRecruitAndCommunityResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.v1.activity.GetActivityByRecruitAndCommunityResponse']>(requestConfig);
   },
 
   /**
@@ -1833,7 +1827,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.v1.activity.GetCourseActivitiesResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.v1.activity.GetCourseActivitiesResponse']>(requestConfig);
   },
 
   /**
@@ -1851,7 +1845,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.v1.activity.GetCourseActivityByIdResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.v1.activity.GetCourseActivityByIdResponse']>(requestConfig);
   },
 
   /**
@@ -1869,7 +1863,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.v1.activity.GetMomentReply']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.v1.activity.GetMomentReply']>(requestConfig);
   },
 
   /**
@@ -1887,7 +1881,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.v1.activity.GetMyEnrollActivityResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.v1.activity.GetMyEnrollActivityResponse']>(requestConfig);
   },
 
   /**
@@ -1905,7 +1899,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.v1.activity.GetNearbyActivitiesResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.v1.activity.GetNearbyActivitiesResponse']>(requestConfig);
   },
 
   /**
@@ -1923,7 +1917,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.v1.activity.GetNotificationsResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.v1.activity.GetNotificationsResponse']>(requestConfig);
   },
 
   /**
@@ -1941,7 +1935,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.v1.activity.GetOnGoingActivitiesResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.v1.activity.GetOnGoingActivitiesResponse']>(requestConfig);
   },
 
   /**
@@ -1959,7 +1953,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.v1.activity.CancelHealthActivityEnrollResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.v1.activity.CancelHealthActivityEnrollResponse']>(requestConfig);
   },
 
   /**
@@ -1977,7 +1971,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.v1.activity.CreateHealthActivityResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.v1.activity.CreateHealthActivityResponse']>(requestConfig);
   },
 
   /**
@@ -1995,7 +1989,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.v1.activity.EnrollHealthActivityResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.v1.activity.EnrollHealthActivityResponse']>(requestConfig);
   },
 
   /**
@@ -2013,7 +2007,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.v1.activity.GetEnrollmentByActivityIdResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.v1.activity.GetEnrollmentByActivityIdResponse']>(requestConfig);
   },
 
   /**
@@ -2031,7 +2025,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.v1.activity.GetEnrollmentDetailsResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.v1.activity.GetEnrollmentDetailsResponse']>(requestConfig);
   },
 
   /**
@@ -2049,7 +2043,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.v1.activity.CreateFamilyDoctorAppointmentResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.v1.activity.CreateFamilyDoctorAppointmentResponse']>(requestConfig);
   },
 
   /**
@@ -2067,7 +2061,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.v1.activity.DeleteFamilyDoctorAppointmentResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.v1.activity.DeleteFamilyDoctorAppointmentResponse']>(requestConfig);
   },
 
   /**
@@ -2085,7 +2079,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.v1.activity.ListFamilyDoctorAppointmentsResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.v1.activity.ListFamilyDoctorAppointmentsResponse']>(requestConfig);
   },
 
   /**
@@ -2103,7 +2097,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.v1.activity.GetFamilyDoctorServiceTypesResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.v1.activity.GetFamilyDoctorServiceTypesResponse']>(requestConfig);
   },
 
   /**
@@ -2121,7 +2115,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.v1.activity.UpdateFamilyDoctorAppointmentResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.v1.activity.UpdateFamilyDoctorAppointmentResponse']>(requestConfig);
   },
 
   /**
@@ -2139,7 +2133,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.v1.activity.GenerateHealthCheckNoticeResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.v1.activity.GenerateHealthCheckNoticeResponse']>(requestConfig);
   },
 
   /**
@@ -2157,7 +2151,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.v1.activity.GetHealthActivityInfoResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.v1.activity.GetHealthActivityInfoResponse']>(requestConfig);
   },
 
   /**
@@ -2175,7 +2169,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.v1.activity.GetHealthActivityListShareInfoResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.v1.activity.GetHealthActivityListShareInfoResponse']>(requestConfig);
   },
 
   /**
@@ -2193,7 +2187,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.v1.activity.GetHealthActivityListResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.v1.activity.GetHealthActivityListResponse']>(requestConfig);
   },
 
   /**
@@ -2211,7 +2205,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.v1.activity.ImportHealthActivityResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.v1.activity.ImportHealthActivityResponse']>(requestConfig);
   },
 
   /**
@@ -2229,7 +2223,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.v1.activity.GetMyHealthEnrollmentsResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.v1.activity.GetMyHealthEnrollmentsResponse']>(requestConfig);
   },
 
   /**
@@ -2247,7 +2241,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.v1.activity.LikeMomentResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.v1.activity.LikeMomentResponse']>(requestConfig);
   },
 
   /**
@@ -2265,7 +2259,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.v1.activity.ListActivitiesByTemplateResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.v1.activity.ListActivitiesByTemplateResponse']>(requestConfig);
   },
 
   /**
@@ -2283,7 +2277,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.v1.activity.ListActivityTplsResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.v1.activity.ListActivityTplsResponse']>(requestConfig);
   },
 
   /**
@@ -2301,7 +2295,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.v1.activity.ListAlbumPhotosResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.v1.activity.ListAlbumPhotosResponse']>(requestConfig);
   },
 
   /**
@@ -2319,7 +2313,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.v1.activity.ListAlbumsResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.v1.activity.ListAlbumsResponse']>(requestConfig);
   },
 
   /**
@@ -2337,7 +2331,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.v1.activity.ListEnrollActivityResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.v1.activity.ListEnrollActivityResponse']>(requestConfig);
   },
 
   /**
@@ -2355,7 +2349,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.v1.activity.ListMomentsResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.v1.activity.ListMomentsResponse']>(requestConfig);
   },
 
   /**
@@ -2373,7 +2367,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.v1.activity.ListPublishedActivitiesResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.v1.activity.ListPublishedActivitiesResponse']>(requestConfig);
   },
 
   /**
@@ -2391,7 +2385,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.v1.activity.ListUserActivitiesResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.v1.activity.ListUserActivitiesResponse']>(requestConfig);
   },
 
   /**
@@ -2409,7 +2403,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.v1.activity.GetActivityPopularityResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.v1.activity.GetActivityPopularityResponse']>(requestConfig);
   },
 
   /**
@@ -2427,7 +2421,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.v1.activity.SearchActivitiesResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.v1.activity.SearchActivitiesResponse']>(requestConfig);
   },
 
   /**
@@ -2445,7 +2439,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.v1.activity.ShareMomentResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.v1.activity.ShareMomentResponse']>(requestConfig);
   },
 
   /**
@@ -2463,7 +2457,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.v1.activity.SyncToActivityScoreResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.v1.activity.SyncToActivityScoreResponse']>(requestConfig);
   },
 
   /**
@@ -2481,7 +2475,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.v1.activity.UpdateActivityResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.v1.activity.UpdateActivityResponse']>(requestConfig);
   },
 
   /**
@@ -2503,7 +2497,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.v1.activity_group_chat.CallbackReply']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.v1.activity_group_chat.CallbackReply']>(requestConfig);
   },
 
   /**
@@ -2521,7 +2515,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.v1.activity_group_chat.GetGroupChatByRecruitAndCommunityResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.v1.activity_group_chat.GetGroupChatByRecruitAndCommunityResponse']>(requestConfig);
   },
 
   /**
@@ -2539,7 +2533,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.v1.activity_group_chat.GetActivityChatSwitchResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.v1.activity_group_chat.GetActivityChatSwitchResponse']>(requestConfig);
   },
 
   /**
@@ -2557,7 +2551,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.v1.activity_group_chat.GetGroupChatDetailResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.v1.activity_group_chat.GetGroupChatDetailResponse']>(requestConfig);
   },
 
   /**
@@ -2575,7 +2569,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.v1.activity_group_chat.GetGroupChatQrCodeResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.v1.activity_group_chat.GetGroupChatQrCodeResponse']>(requestConfig);
   },
 
   /**
@@ -2593,7 +2587,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.v1.activity_group_chat.SetActivityChatSwitchResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.v1.activity_group_chat.SetActivityChatSwitchResponse']>(requestConfig);
   },
 
   /**
@@ -2611,7 +2605,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.v1.activity_group_chat.SyncActivityGroupChatResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.v1.activity_group_chat.SyncActivityGroupChatResponse']>(requestConfig);
   },
 
   /**
@@ -2629,7 +2623,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.v1.ai.ListAiRecordByUserIDResp']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.v1.ai.ListAiRecordByUserIDResp']>(requestConfig);
   },
 
   /**
@@ -2647,7 +2641,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.v1.ai.StartChatRsp']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.v1.ai.StartChatRsp']>(requestConfig);
   },
 
   /**
@@ -2665,7 +2659,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.v1.ai.StopChatRsp']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.v1.ai.StopChatRsp']>(requestConfig);
   },
 
   /**
@@ -2683,7 +2677,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.v1.ai.UpdateChatResp']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.v1.ai.UpdateChatResp']>(requestConfig);
   },
 
   /**
@@ -2701,7 +2695,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['business.v1.SignReply']>(requestConfig);
+    return getApiClient().request<components['schemas']['business.v1.SignReply']>(requestConfig);
   },
 
   /**
@@ -2719,7 +2713,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['system.v1.AddressInverseResolutionReply']>(requestConfig);
+    return getApiClient().request<components['schemas']['system.v1.AddressInverseResolutionReply']>(requestConfig);
   },
 
   /**
@@ -2737,7 +2731,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['system.v1.CountUnreadMessagesReply']>(requestConfig);
+    return getApiClient().request<components['schemas']['system.v1.CountUnreadMessagesReply']>(requestConfig);
   },
 
   /**
@@ -2755,7 +2749,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['system.v1.GenerateSoundTextResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['system.v1.GenerateSoundTextResponse']>(requestConfig);
   },
 
   /**
@@ -2773,7 +2767,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['system.v1.GenerateWechatQRCodeReply']>(requestConfig);
+    return getApiClient().request<components['schemas']['system.v1.GenerateWechatQRCodeReply']>(requestConfig);
   },
 
   /**
@@ -2791,7 +2785,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['system.v1.GetCosTempKeyReply']>(requestConfig);
+    return getApiClient().request<components['schemas']['system.v1.GetCosTempKeyReply']>(requestConfig);
   },
 
   /**
@@ -2808,7 +2802,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['system.v1.HealthyCheckReply']>(requestConfig);
+    return getApiClient().request<components['schemas']['system.v1.HealthyCheckReply']>(requestConfig);
   },
 
   /**
@@ -2826,7 +2820,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['system.v1.NavigateToMiniProgramReply']>(requestConfig);
+    return getApiClient().request<components['schemas']['system.v1.NavigateToMiniProgramReply']>(requestConfig);
   },
 
   /**
@@ -2844,7 +2838,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['system.v1.MessageStatusChangeReply']>(requestConfig);
+    return getApiClient().request<components['schemas']['system.v1.MessageStatusChangeReply']>(requestConfig);
   },
 
   /**
@@ -2861,7 +2855,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['system.v1.StopServerReply']>(requestConfig);
+    return getApiClient().request<components['schemas']['system.v1.StopServerReply']>(requestConfig);
   },
 
   /**
@@ -2879,7 +2873,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.v1.contribution.BatchCreateContributionsResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.v1.contribution.BatchCreateContributionsResponse']>(requestConfig);
   },
 
   /**
@@ -2897,7 +2891,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.v1.contribution.ContributionRecord']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.v1.contribution.ContributionRecord']>(requestConfig);
   },
 
   /**
@@ -2915,7 +2909,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.v1.contribution.ListUserContributionsResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.v1.contribution.ListUserContributionsResponse']>(requestConfig);
   },
 
   /**
@@ -2933,7 +2927,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.v1.contribution.GetUserContributionRankResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.v1.contribution.GetUserContributionRankResponse']>(requestConfig);
   },
 
   /**
@@ -2951,7 +2945,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.v1.contribution.ContributionStats']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.v1.contribution.ContributionStats']>(requestConfig);
   },
 
   /**
@@ -2969,7 +2963,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['coupon.v1.GrabCouponReply']>(requestConfig);
+    return getApiClient().request<components['schemas']['coupon.v1.GrabCouponReply']>(requestConfig);
   },
 
   /**
@@ -2987,7 +2981,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['coupon.v1.CouponStatusReply']>(requestConfig);
+    return getApiClient().request<components['schemas']['coupon.v1.CouponStatusReply']>(requestConfig);
   },
 
   /**
@@ -3005,7 +2999,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['coupon.v1.ConsumeCouponReply']>(requestConfig);
+    return getApiClient().request<components['schemas']['coupon.v1.ConsumeCouponReply']>(requestConfig);
   },
 
   /**
@@ -3023,7 +3017,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['coupon.v1.MyCouponsReply']>(requestConfig);
+    return getApiClient().request<components['schemas']['coupon.v1.MyCouponsReply']>(requestConfig);
   },
 
   /**
@@ -3041,7 +3035,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.v1.course.CancelEnrollResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.v1.course.CancelEnrollResponse']>(requestConfig);
   },
 
   /**
@@ -3059,7 +3053,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.v1.course.EnrollCourseResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.v1.course.EnrollCourseResponse']>(requestConfig);
   },
 
   /**
@@ -3077,7 +3071,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.v1.course.GetCourseResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.v1.course.GetCourseResponse']>(requestConfig);
   },
 
   /**
@@ -3095,7 +3089,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.v1.course.GetCourseScheduleResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.v1.course.GetCourseScheduleResponse']>(requestConfig);
   },
 
   /**
@@ -3113,7 +3107,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.v1.course.GetMyEnrollCoursesResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.v1.course.GetMyEnrollCoursesResponse']>(requestConfig);
   },
 
   /**
@@ -3131,7 +3125,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.v1.course.GetNearbyCoursesResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.v1.course.GetNearbyCoursesResponse']>(requestConfig);
   },
 
   /**
@@ -3149,7 +3143,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.v1.course.ListCourseEnrollsResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.v1.course.ListCourseEnrollsResponse']>(requestConfig);
   },
 
   /**
@@ -3167,7 +3161,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['business.v1.CallReply']>(requestConfig);
+    return getApiClient().request<components['schemas']['business.v1.CallReply']>(requestConfig);
   },
 
   /**
@@ -3185,7 +3179,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['business.v1.CancelCallReply']>(requestConfig);
+    return getApiClient().request<components['schemas']['business.v1.CancelCallReply']>(requestConfig);
   },
 
   /**
@@ -3203,7 +3197,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['business.v1.CreateReply']>(requestConfig);
+    return getApiClient().request<components['schemas']['business.v1.CreateReply']>(requestConfig);
   },
 
   /**
@@ -3221,7 +3215,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['business.v1.DescribeEmergencyTRTCInfoReply']>(requestConfig);
+    return getApiClient().request<components['schemas']['business.v1.DescribeEmergencyTRTCInfoReply']>(requestConfig);
   },
 
   /**
@@ -3239,7 +3233,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['business.v1.DescribeEmergencyTRTCUsersReply']>(requestConfig);
+    return getApiClient().request<components['schemas']['business.v1.DescribeEmergencyTRTCUsersReply']>(requestConfig);
   },
 
   /**
@@ -3257,7 +3251,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['business.v1.DescribeEmergencyTimelinesReply']>(requestConfig);
+    return getApiClient().request<components['schemas']['business.v1.DescribeEmergencyTimelinesReply']>(requestConfig);
   },
 
   /**
@@ -3275,7 +3269,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['business.v1.MatchRespondRegionReply']>(requestConfig);
+    return getApiClient().request<components['schemas']['business.v1.MatchRespondRegionReply']>(requestConfig);
   },
 
   /**
@@ -3293,7 +3287,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.help.v1.SyncUpdateRequestAddressResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.help.v1.SyncUpdateRequestAddressResponse']>(requestConfig);
   },
 
   /**
@@ -3311,7 +3305,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.help.v1.GetCategoriesTreeResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.help.v1.GetCategoriesTreeResponse']>(requestConfig);
   },
 
   /**
@@ -3329,7 +3323,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.help.v1.DeleteCategoryResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.help.v1.DeleteCategoryResponse']>(requestConfig);
   },
 
   /**
@@ -3347,7 +3341,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.help.v1.ListCategoriesResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.help.v1.ListCategoriesResponse']>(requestConfig);
   },
 
   /**
@@ -3365,7 +3359,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.help.v1.SearchHelpCategoryResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.help.v1.SearchHelpCategoryResponse']>(requestConfig);
   },
 
   /**
@@ -3383,7 +3377,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.help.v1.GetHelpRequestCategorySummaryResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.help.v1.GetHelpRequestCategorySummaryResponse']>(requestConfig);
   },
 
   /**
@@ -3401,7 +3395,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.help.v1.UpsertCategoryResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.help.v1.UpsertCategoryResponse']>(requestConfig);
   },
 
   /**
@@ -3419,7 +3413,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.help.v1.GetCommunityCategoriesResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.help.v1.GetCommunityCategoriesResponse']>(requestConfig);
   },
 
   /**
@@ -3437,7 +3431,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.help.v1.CreateOrUpdateContactResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.help.v1.CreateOrUpdateContactResponse']>(requestConfig);
   },
 
   /**
@@ -3455,7 +3449,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.help.v1.DeleteContactResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.help.v1.DeleteContactResponse']>(requestConfig);
   },
 
   /**
@@ -3473,7 +3467,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.help.v1.ListUserContactsResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.help.v1.ListUserContactsResponse']>(requestConfig);
   },
 
   /**
@@ -3491,7 +3485,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.help.v1.SyncUpdateContactResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.help.v1.SyncUpdateContactResponse']>(requestConfig);
   },
 
   /**
@@ -3509,7 +3503,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.help.v1.GetOrgByHelpCategoryResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.help.v1.GetOrgByHelpCategoryResponse']>(requestConfig);
   },
 
   /**
@@ -3527,7 +3521,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.help.v1.ListOrgByCommunityResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.help.v1.ListOrgByCommunityResponse']>(requestConfig);
   },
 
   /**
@@ -3545,7 +3539,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.help.v1.GetCommunityPaidOrgResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.help.v1.GetCommunityPaidOrgResponse']>(requestConfig);
   },
 
   /**
@@ -3563,7 +3557,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.help.v1.CancelHelpRequestResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.help.v1.CancelHelpRequestResponse']>(requestConfig);
   },
 
   /**
@@ -3581,7 +3575,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.help.v1.CreateHelpRequestResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.help.v1.CreateHelpRequestResponse']>(requestConfig);
   },
 
   /**
@@ -3599,7 +3593,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.help.v1.CreateHelpRequestResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.help.v1.CreateHelpRequestResponse']>(requestConfig);
   },
 
   /**
@@ -3617,7 +3611,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.help.v1.CreateRetroactiveHelpRequestResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.help.v1.CreateRetroactiveHelpRequestResponse']>(requestConfig);
   },
 
   /**
@@ -3635,7 +3629,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.help.v1.GetHelpRequestDetailResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.help.v1.GetHelpRequestDetailResponse']>(requestConfig);
   },
 
   /**
@@ -3653,7 +3647,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.help.v1.FinishHelpRequestResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.help.v1.FinishHelpRequestResponse']>(requestConfig);
   },
 
   /**
@@ -3671,7 +3665,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.help.v1.GetRetroactiveDraftResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.help.v1.GetRetroactiveDraftResponse']>(requestConfig);
   },
 
   /**
@@ -3689,7 +3683,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.help.v1.GetStatusDetailResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.help.v1.GetStatusDetailResponse']>(requestConfig);
   },
 
   /**
@@ -3707,7 +3701,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.help.v1.ListHelpRequestsResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.help.v1.ListHelpRequestsResponse']>(requestConfig);
   },
 
   /**
@@ -3725,7 +3719,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.help.v1.GetMyPublishedRequestsResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.help.v1.GetMyPublishedRequestsResponse']>(requestConfig);
   },
 
   /**
@@ -3743,7 +3737,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.help.v1.PreCheckResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.help.v1.PreCheckResponse']>(requestConfig);
   },
 
   /**
@@ -3761,7 +3755,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.help.v1.SaveRetroactiveDraftResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.help.v1.SaveRetroactiveDraftResponse']>(requestConfig);
   },
 
   /**
@@ -3779,7 +3773,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.help.v1.SyncDataResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.help.v1.SyncDataResponse']>(requestConfig);
   },
 
   /**
@@ -3797,7 +3791,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.help.v1.TriggerFillLocationResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.help.v1.TriggerFillLocationResponse']>(requestConfig);
   },
 
   /**
@@ -3815,7 +3809,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.help.v1.FinishHelpRequestResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.help.v1.FinishHelpRequestResponse']>(requestConfig);
   },
 
   /**
@@ -3833,7 +3827,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.help.v1.BatchUpdateCityInfoResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.help.v1.BatchUpdateCityInfoResponse']>(requestConfig);
   },
 
   /**
@@ -3851,7 +3845,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.help.v1.UpdateHelpRequestStatusResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.help.v1.UpdateHelpRequestStatusResponse']>(requestConfig);
   },
 
   /**
@@ -3869,7 +3863,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.help.v1.ApplyHelperResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.help.v1.ApplyHelperResponse']>(requestConfig);
   },
 
   /**
@@ -3887,7 +3881,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.help.v1.ApproveHelperApplyResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.help.v1.ApproveHelperApplyResponse']>(requestConfig);
   },
 
   /**
@@ -3905,7 +3899,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.help.v1.CancelHelperApplyResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.help.v1.CancelHelperApplyResponse']>(requestConfig);
   },
 
   /**
@@ -3923,7 +3917,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.help.v1.GetHelperApplyResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.help.v1.GetHelperApplyResponse']>(requestConfig);
   },
 
   /**
@@ -3941,7 +3935,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.help.v1.ListHelperApplyResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.help.v1.ListHelperApplyResponse']>(requestConfig);
   },
 
   /**
@@ -3959,7 +3953,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.help.v1.RefuseHelperApplyResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.help.v1.RefuseHelperApplyResponse']>(requestConfig);
   },
 
   /**
@@ -3977,7 +3971,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.help.v1.CommentHelpEnrollmentResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.help.v1.CommentHelpEnrollmentResponse']>(requestConfig);
   },
 
   /**
@@ -3995,7 +3989,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.help.v1.GetRequestCommentResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.help.v1.GetRequestCommentResponse']>(requestConfig);
   },
 
   /**
@@ -4013,7 +4007,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.help.v1.TriggerPopulateCommentStaticsResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.help.v1.TriggerPopulateCommentStaticsResponse']>(requestConfig);
   },
 
   /**
@@ -4031,7 +4025,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.help.v1.GetAllResidentCommunitiesResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.help.v1.GetAllResidentCommunitiesResponse']>(requestConfig);
   },
 
   /**
@@ -4049,7 +4043,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.help.v1.GetHelperRequestEnrollmentResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.help.v1.GetHelperRequestEnrollmentResponse']>(requestConfig);
   },
 
   /**
@@ -4067,7 +4061,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.help.v1.ListHelpEnrollmentHomPageResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.help.v1.ListHelpEnrollmentHomPageResponse']>(requestConfig);
   },
 
   /**
@@ -4085,7 +4079,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.help.v1.ListHelperRequestEnrollmentResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.help.v1.ListHelperRequestEnrollmentResponse']>(requestConfig);
   },
 
   /**
@@ -4103,7 +4097,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.help.v1.ListHelpRequestEnrollmentByOrgResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.help.v1.ListHelpRequestEnrollmentByOrgResponse']>(requestConfig);
   },
 
   /**
@@ -4121,7 +4115,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.help.v1.ListEnrollmentPhotoByOrgAndCommunityResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.help.v1.ListEnrollmentPhotoByOrgAndCommunityResponse']>(requestConfig);
   },
 
   /**
@@ -4139,7 +4133,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.help.v1.GetHelperEnrollmentPhotoResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.help.v1.GetHelperEnrollmentPhotoResponse']>(requestConfig);
   },
 
   /**
@@ -4157,7 +4151,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.help.v1.GetHelperRequestEnrollmentUserResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.help.v1.GetHelperRequestEnrollmentUserResponse']>(requestConfig);
   },
 
   /**
@@ -4175,7 +4169,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.help.v1.GetHelperResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.help.v1.GetHelperResponse']>(requestConfig);
   },
 
   /**
@@ -4193,7 +4187,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.help.v1.GetHelperResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.help.v1.GetHelperResponse']>(requestConfig);
   },
 
   /**
@@ -4211,7 +4205,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.help.v1.GetHelperResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.help.v1.GetHelperResponse']>(requestConfig);
   },
 
   /**
@@ -4229,7 +4223,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.help.v1.TriggerPopulateCommentStaticsResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.help.v1.TriggerPopulateCommentStaticsResponse']>(requestConfig);
   },
 
   /**
@@ -4247,7 +4241,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.help.v1.ListResidentLikeCntResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.help.v1.ListResidentLikeCntResponse']>(requestConfig);
   },
 
   /**
@@ -4265,7 +4259,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.help.v1.ListHelperRequestEnrollmentResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.help.v1.ListHelperRequestEnrollmentResponse']>(requestConfig);
   },
 
   /**
@@ -4283,7 +4277,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.help.v1.GetResidents2CommentResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.help.v1.GetResidents2CommentResponse']>(requestConfig);
   },
 
   /**
@@ -4301,7 +4295,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.help.v1.EnrollHelpRequestResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.help.v1.EnrollHelpRequestResponse']>(requestConfig);
   },
 
   /**
@@ -4319,7 +4313,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.help.v1.CancelHelpRequestEnrollmentResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.help.v1.CancelHelpRequestEnrollmentResponse']>(requestConfig);
   },
 
   /**
@@ -4337,7 +4331,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.help.v1.FinishHelpEnrollmentResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.help.v1.FinishHelpEnrollmentResponse']>(requestConfig);
   },
 
   /**
@@ -4355,7 +4349,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['seek_medical.v1.CheckSeekMedicalConditionReply']>(requestConfig);
+    return getApiClient().request<components['schemas']['seek_medical.v1.CheckSeekMedicalConditionReply']>(requestConfig);
   },
 
   /**
@@ -4373,7 +4367,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['seek_medical.v1.DescribeDoctorReply']>(requestConfig);
+    return getApiClient().request<components['schemas']['seek_medical.v1.DescribeDoctorReply']>(requestConfig);
   },
 
   /**
@@ -4391,7 +4385,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['seek_medical.v1.DescribeDoctorScheduleReply']>(requestConfig);
+    return getApiClient().request<components['schemas']['seek_medical.v1.DescribeDoctorScheduleReply']>(requestConfig);
   },
 
   /**
@@ -4409,7 +4403,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['seek_medical.v1.DescribeElderInfoListReply']>(requestConfig);
+    return getApiClient().request<components['schemas']['seek_medical.v1.DescribeElderInfoListReply']>(requestConfig);
   },
 
   /**
@@ -4427,7 +4421,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['seek_medical.v1.DescribeHospitalReply']>(requestConfig);
+    return getApiClient().request<components['schemas']['seek_medical.v1.DescribeHospitalReply']>(requestConfig);
   },
 
   /**
@@ -4445,7 +4439,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['seek_medical.v1.GetHospitalInfoByDoctorIDReply']>(requestConfig);
+    return getApiClient().request<components['schemas']['seek_medical.v1.GetHospitalInfoByDoctorIDReply']>(requestConfig);
   },
 
   /**
@@ -4463,7 +4457,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['seek_medical.v1.HealthMessageInfoReply']>(requestConfig);
+    return getApiClient().request<components['schemas']['seek_medical.v1.HealthMessageInfoReply']>(requestConfig);
   },
 
   /**
@@ -4481,7 +4475,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['seek_medical.v1.HealthMessageListReply']>(requestConfig);
+    return getApiClient().request<components['schemas']['seek_medical.v1.HealthMessageListReply']>(requestConfig);
   },
 
   /**
@@ -4499,7 +4493,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['seek_medical.v1.CheckElderSubscribeHealthMessageReply']>(requestConfig);
+    return getApiClient().request<components['schemas']['seek_medical.v1.CheckElderSubscribeHealthMessageReply']>(requestConfig);
   },
 
   /**
@@ -4517,7 +4511,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['business.v1.GetUserSigReply']>(requestConfig);
+    return getApiClient().request<components['schemas']['business.v1.GetUserSigReply']>(requestConfig);
   },
 
   /**
@@ -4535,7 +4529,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['business.v1.ImConfigReply']>(requestConfig);
+    return getApiClient().request<components['schemas']['business.v1.ImConfigReply']>(requestConfig);
   },
 
   /**
@@ -4553,7 +4547,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['system.v1.LoginOperateReply']>(requestConfig);
+    return getApiClient().request<components['schemas']['system.v1.LoginOperateReply']>(requestConfig);
   },
 
   /**
@@ -4571,7 +4565,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['system.v1.RefreshReply']>(requestConfig);
+    return getApiClient().request<components['schemas']['system.v1.RefreshReply']>(requestConfig);
   },
 
   /**
@@ -4589,7 +4583,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['system.v1.WxLoginReply']>(requestConfig);
+    return getApiClient().request<components['schemas']['system.v1.WxLoginReply']>(requestConfig);
   },
 
   /**
@@ -4607,7 +4601,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['business.v1.MessageOperateReply']>(requestConfig);
+    return getApiClient().request<components['schemas']['business.v1.MessageOperateReply']>(requestConfig);
   },
 
   /**
@@ -4625,7 +4619,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.organization.v1.GetOrganizationResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.organization.v1.GetOrganizationResponse']>(requestConfig);
   },
 
   /**
@@ -4643,7 +4637,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.organization.v1.JoinOrgResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.organization.v1.JoinOrgResponse']>(requestConfig);
   },
 
   /**
@@ -4661,7 +4655,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.payment.v1.CloseOrderRes']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.payment.v1.CloseOrderRes']>(requestConfig);
   },
 
   /**
@@ -4679,7 +4673,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.payment.v1.CompleteOrderRes']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.payment.v1.CompleteOrderRes']>(requestConfig);
   },
 
   /**
@@ -4697,7 +4691,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.payment.v1.GetWxPaySignRes']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.payment.v1.GetWxPaySignRes']>(requestConfig);
   },
 
   /**
@@ -4715,7 +4709,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.payment.v1.ListOrderRes']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.payment.v1.ListOrderRes']>(requestConfig);
   },
 
   /**
@@ -4733,7 +4727,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.payment.v1.PrePayRes']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.payment.v1.PrePayRes']>(requestConfig);
   },
 
   /**
@@ -4751,7 +4745,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.payment.v1.RefundRes']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.payment.v1.RefundRes']>(requestConfig);
   },
 
   /**
@@ -4769,7 +4763,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.activity.v1.ListRecruitApplicantsResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.activity.v1.ListRecruitApplicantsResponse']>(requestConfig);
   },
 
   /**
@@ -4787,7 +4781,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.activity.v1.ApplyRecruitCampaignResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.activity.v1.ApplyRecruitCampaignResponse']>(requestConfig);
   },
 
   /**
@@ -4805,7 +4799,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.activity.v1.CheckRecruitAppliedResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.activity.v1.CheckRecruitAppliedResponse']>(requestConfig);
   },
 
   /**
@@ -4823,7 +4817,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.activity.v1.CreateRecruitCampaignResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.activity.v1.CreateRecruitCampaignResponse']>(requestConfig);
   },
 
   /**
@@ -4841,7 +4835,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.activity.v1.DeleteRecruitCampaignResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.activity.v1.DeleteRecruitCampaignResponse']>(requestConfig);
   },
 
   /**
@@ -4859,7 +4853,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.activity.v1.ListRecruitCampaignsResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.activity.v1.ListRecruitCampaignsResponse']>(requestConfig);
   },
 
   /**
@@ -4877,7 +4871,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.food_delivery.v1.OrderHistoryResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.food_delivery.v1.OrderHistoryResponse']>(requestConfig);
   },
 
   /**
@@ -4895,7 +4889,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.food_delivery.v1.RestaurantDetailResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.food_delivery.v1.RestaurantDetailResponse']>(requestConfig);
   },
 
   /**
@@ -4913,7 +4907,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.food_delivery.v1.MenuResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.food_delivery.v1.MenuResponse']>(requestConfig);
   },
 
   /**
@@ -4931,7 +4925,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.food_delivery.v1.ScanHistoryResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.food_delivery.v1.ScanHistoryResponse']>(requestConfig);
   },
 
   /**
@@ -4949,7 +4943,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.food_delivery.v1.ImportMenuReply']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.food_delivery.v1.ImportMenuReply']>(requestConfig);
   },
 
   /**
@@ -4967,7 +4961,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.food_delivery.v1.ListOrdersResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.food_delivery.v1.ListOrdersResponse']>(requestConfig);
   },
 
   /**
@@ -4985,7 +4979,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.food_delivery.v1.PlaceOrderResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.food_delivery.v1.PlaceOrderResponse']>(requestConfig);
   },
 
   /**
@@ -5003,7 +4997,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.food_delivery.v1.SearchInAreaResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.food_delivery.v1.SearchInAreaResponse']>(requestConfig);
   },
 
   /**
@@ -5021,7 +5015,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.food_delivery.v1.ImportMenuReply']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.food_delivery.v1.ImportMenuReply']>(requestConfig);
   },
 
   /**
@@ -5039,7 +5033,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.food_delivery.v1.UpdateMenuItemsResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.food_delivery.v1.UpdateMenuItemsResponse']>(requestConfig);
   },
 
   /**
@@ -5057,7 +5051,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.food_delivery.v1.UpdateMenuItemsIncrementalResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.food_delivery.v1.UpdateMenuItemsIncrementalResponse']>(requestConfig);
   },
 
   /**
@@ -5075,7 +5069,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.food_delivery.v1.UploadMenuImagesResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.food_delivery.v1.UploadMenuImagesResponse']>(requestConfig);
   },
 
   /**
@@ -5093,7 +5087,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.food_delivery.v1.UpsertRestaurantInfoResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.food_delivery.v1.UpsertRestaurantInfoResponse']>(requestConfig);
   },
 
   /**
@@ -5111,7 +5105,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['business.v1.ServiceOperateReply']>(requestConfig);
+    return getApiClient().request<components['schemas']['business.v1.ServiceOperateReply']>(requestConfig);
   },
 
   /**
@@ -5129,7 +5123,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['business.v1.BrowseArticleReply']>(requestConfig);
+    return getApiClient().request<components['schemas']['business.v1.BrowseArticleReply']>(requestConfig);
   },
 
   /**
@@ -5147,7 +5141,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['business.v1.ServiceOperateReply']>(requestConfig);
+    return getApiClient().request<components['schemas']['business.v1.ServiceOperateReply']>(requestConfig);
   },
 
   /**
@@ -5165,7 +5159,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['business.v1.ChatServiceStatusChangeNoticeReply']>(requestConfig);
+    return getApiClient().request<components['schemas']['business.v1.ChatServiceStatusChangeNoticeReply']>(requestConfig);
   },
 
   /**
@@ -5183,7 +5177,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['business.v1.CompletePaidServiceReply']>(requestConfig);
+    return getApiClient().request<components['schemas']['business.v1.CompletePaidServiceReply']>(requestConfig);
   },
 
   /**
@@ -5201,7 +5195,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['business.v1.ThirdCreateServiceReply']>(requestConfig);
+    return getApiClient().request<components['schemas']['business.v1.ThirdCreateServiceReply']>(requestConfig);
   },
 
   /**
@@ -5219,7 +5213,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['server.v1.CreateServiceReply']>(requestConfig);
+    return getApiClient().request<components['schemas']['server.v1.CreateServiceReply']>(requestConfig);
   },
 
   /**
@@ -5237,7 +5231,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['business.v1.DescribeServiceReply']>(requestConfig);
+    return getApiClient().request<components['schemas']['business.v1.DescribeServiceReply']>(requestConfig);
   },
 
   /**
@@ -5255,7 +5249,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['business.v1.DescribeServiceListReply']>(requestConfig);
+    return getApiClient().request<components['schemas']['business.v1.DescribeServiceListReply']>(requestConfig);
   },
 
   /**
@@ -5273,7 +5267,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['business.v1.ServiceEvaluateReply']>(requestConfig);
+    return getApiClient().request<components['schemas']['business.v1.ServiceEvaluateReply']>(requestConfig);
   },
 
   /**
@@ -5291,7 +5285,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['business.v1.FindCommunityPlazaReply']>(requestConfig);
+    return getApiClient().request<components['schemas']['business.v1.FindCommunityPlazaReply']>(requestConfig);
   },
 
   /**
@@ -5309,7 +5303,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['business.v1.GetLastServiceEvaluateReply']>(requestConfig);
+    return getApiClient().request<components['schemas']['business.v1.GetLastServiceEvaluateReply']>(requestConfig);
   },
 
   /**
@@ -5327,7 +5321,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['business.v1.GetPaidServiceByVerifyTokenReply']>(requestConfig);
+    return getApiClient().request<components['schemas']['business.v1.GetPaidServiceByVerifyTokenReply']>(requestConfig);
   },
 
   /**
@@ -5345,7 +5339,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['business.v1.GetRoomUserInfoReply']>(requestConfig);
+    return getApiClient().request<components['schemas']['business.v1.GetRoomUserInfoReply']>(requestConfig);
   },
 
   /**
@@ -5363,7 +5357,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['business.v1.GetServiceUsageCountReply']>(requestConfig);
+    return getApiClient().request<components['schemas']['business.v1.GetServiceUsageCountReply']>(requestConfig);
   },
 
   /**
@@ -5381,7 +5375,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['business.v1.GetTrTcReply']>(requestConfig);
+    return getApiClient().request<components['schemas']['business.v1.GetTrTcReply']>(requestConfig);
   },
 
   /**
@@ -5399,7 +5393,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['business.v1.ServiceOperateReply']>(requestConfig);
+    return getApiClient().request<components['schemas']['business.v1.ServiceOperateReply']>(requestConfig);
   },
 
   /**
@@ -5417,7 +5411,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['business.v1.HomeBannerServiceListReply']>(requestConfig);
+    return getApiClient().request<components['schemas']['business.v1.HomeBannerServiceListReply']>(requestConfig);
   },
 
   /**
@@ -5435,7 +5429,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['business.v1.MineHelpServiceListReply']>(requestConfig);
+    return getApiClient().request<components['schemas']['business.v1.MineHelpServiceListReply']>(requestConfig);
   },
 
   /**
@@ -5453,7 +5447,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['business.v1.ServiceOperateReply']>(requestConfig);
+    return getApiClient().request<components['schemas']['business.v1.ServiceOperateReply']>(requestConfig);
   },
 
   /**
@@ -5471,7 +5465,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['business.v1.ServiceOperateReply']>(requestConfig);
+    return getApiClient().request<components['schemas']['business.v1.ServiceOperateReply']>(requestConfig);
   },
 
   /**
@@ -5489,7 +5483,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['business.v1.SomethingNewReply']>(requestConfig);
+    return getApiClient().request<components['schemas']['business.v1.SomethingNewReply']>(requestConfig);
   },
 
   /**
@@ -5507,7 +5501,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['business.v1.SubmitPaidServiceCommentReply']>(requestConfig);
+    return getApiClient().request<components['schemas']['business.v1.SubmitPaidServiceCommentReply']>(requestConfig);
   },
 
   /**
@@ -5525,7 +5519,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['server.v1.ValidateServiceReply']>(requestConfig);
+    return getApiClient().request<components['schemas']['server.v1.ValidateServiceReply']>(requestConfig);
   },
 
   /**
@@ -5543,7 +5537,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['business.v1.CommunityActivityReply']>(requestConfig);
+    return getApiClient().request<components['schemas']['business.v1.CommunityActivityReply']>(requestConfig);
   },
 
   /**
@@ -5561,7 +5555,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.callback.v1.CallbackResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.callback.v1.CallbackResponse']>(requestConfig);
   },
 
   /**
@@ -5579,7 +5573,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['system.v1.CheckCommunityServiceReply']>(requestConfig);
+    return getApiClient().request<components['schemas']['system.v1.CheckCommunityServiceReply']>(requestConfig);
   },
 
   /**
@@ -5597,7 +5591,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['system.v1.CheckTokenReply']>(requestConfig);
+    return getApiClient().request<components['schemas']['system.v1.CheckTokenReply']>(requestConfig);
   },
 
   /**
@@ -5615,7 +5609,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.help.v1.GetUserContributionLevelResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.help.v1.GetUserContributionLevelResponse']>(requestConfig);
   },
 
   /**
@@ -5633,7 +5627,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['system.v1.UserOperateReply']>(requestConfig);
+    return getApiClient().request<components['schemas']['system.v1.UserOperateReply']>(requestConfig);
   },
 
   /**
@@ -5651,7 +5645,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['system.v1.UserOperateReply']>(requestConfig);
+    return getApiClient().request<components['schemas']['system.v1.UserOperateReply']>(requestConfig);
   },
 
   /**
@@ -5669,7 +5663,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['system.v1.DescribeElderReply']>(requestConfig);
+    return getApiClient().request<components['schemas']['system.v1.DescribeElderReply']>(requestConfig);
   },
 
   /**
@@ -5687,7 +5681,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['system.v1.UserOperateReply']>(requestConfig);
+    return getApiClient().request<components['schemas']['system.v1.UserOperateReply']>(requestConfig);
   },
 
   /**
@@ -5705,7 +5699,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['system.v1.GeneratePersonalQrCodeReply']>(requestConfig);
+    return getApiClient().request<components['schemas']['system.v1.GeneratePersonalQrCodeReply']>(requestConfig);
   },
 
   /**
@@ -5723,7 +5717,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['system.v1.GetCommunityDetailReply']>(requestConfig);
+    return getApiClient().request<components['schemas']['system.v1.GetCommunityDetailReply']>(requestConfig);
   },
 
   /**
@@ -5741,7 +5735,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['system.v1.GetCommunityListReply']>(requestConfig);
+    return getApiClient().request<components['schemas']['system.v1.GetCommunityListReply']>(requestConfig);
   },
 
   /**
@@ -5759,7 +5753,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['system.v1.GetCurrentUserReply']>(requestConfig);
+    return getApiClient().request<components['schemas']['system.v1.GetCurrentUserReply']>(requestConfig);
   },
 
   /**
@@ -5777,7 +5771,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['system.v1.GetElderByIdResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['system.v1.GetElderByIdResponse']>(requestConfig);
   },
 
   /**
@@ -5795,7 +5789,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['system.v1.GetElderCreditsResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['system.v1.GetElderCreditsResponse']>(requestConfig);
   },
 
   /**
@@ -5813,7 +5807,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['system.v1.GetWxPhoneNumberReply']>(requestConfig);
+    return getApiClient().request<components['schemas']['system.v1.GetWxPhoneNumberReply']>(requestConfig);
   },
 
   /**
@@ -5831,7 +5825,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['system.v1.GetUserInfoByTokenResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['system.v1.GetUserInfoByTokenResponse']>(requestConfig);
   },
 
   /**
@@ -5849,7 +5843,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['system.v1.HelpHeadCountCountReply']>(requestConfig);
+    return getApiClient().request<components['schemas']['system.v1.HelpHeadCountCountReply']>(requestConfig);
   },
 
   /**
@@ -5867,7 +5861,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['system.v1.HelpVolunteerListReply']>(requestConfig);
+    return getApiClient().request<components['schemas']['system.v1.HelpVolunteerListReply']>(requestConfig);
   },
 
   /**
@@ -5885,7 +5879,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['system.v1.ListElderCreditRecordsResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['system.v1.ListElderCreditRecordsResponse']>(requestConfig);
   },
 
   /**
@@ -5903,7 +5897,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['system.v1.UserOperateReply']>(requestConfig);
+    return getApiClient().request<components['schemas']['system.v1.UserOperateReply']>(requestConfig);
   },
 
   /**
@@ -5921,7 +5915,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['system.v1.QrCodeBindCheckReply']>(requestConfig);
+    return getApiClient().request<components['schemas']['system.v1.QrCodeBindCheckReply']>(requestConfig);
   },
 
   /**
@@ -5939,7 +5933,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['system.v1.RealNameReply']>(requestConfig);
+    return getApiClient().request<components['schemas']['system.v1.RealNameReply']>(requestConfig);
   },
 
   /**
@@ -5957,7 +5951,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['system.v1.CancelRealNameReply']>(requestConfig);
+    return getApiClient().request<components['schemas']['system.v1.CancelRealNameReply']>(requestConfig);
   },
 
   /**
@@ -5975,7 +5969,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['system.v1.RedirectLoginResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['system.v1.RedirectLoginResponse']>(requestConfig);
   },
 
   /**
@@ -5993,7 +5987,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.help.v1.GetUserCenterSummaryResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.help.v1.GetUserCenterSummaryResponse']>(requestConfig);
   },
 
   /**
@@ -6011,7 +6005,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['system.v1.TriggerCommunityListReply']>(requestConfig);
+    return getApiClient().request<components['schemas']['system.v1.TriggerCommunityListReply']>(requestConfig);
   },
 
   /**
@@ -6029,7 +6023,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['system.v1.UnbindIdentityReply']>(requestConfig);
+    return getApiClient().request<components['schemas']['system.v1.UnbindIdentityReply']>(requestConfig);
   },
 
   /**
@@ -6047,7 +6041,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['system.v1.UpdatePhoneFromWeixinReply']>(requestConfig);
+    return getApiClient().request<components['schemas']['system.v1.UpdatePhoneFromWeixinReply']>(requestConfig);
   },
 
   /**
@@ -6065,7 +6059,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['system.v1.UpdatePrivacySettingsResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['system.v1.UpdatePrivacySettingsResponse']>(requestConfig);
   },
 
   /**
@@ -6083,7 +6077,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['system.v1.ValidatePersonalQrCodeReply']>(requestConfig);
+    return getApiClient().request<components['schemas']['system.v1.ValidatePersonalQrCodeReply']>(requestConfig);
   },
 
   /**
@@ -6101,7 +6095,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['system.v1.VolunteerInsureReply']>(requestConfig);
+    return getApiClient().request<components['schemas']['system.v1.VolunteerInsureReply']>(requestConfig);
   },
 
   /**
@@ -6119,7 +6113,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['system.v1.PageVolunteerInsureReply']>(requestConfig);
+    return getApiClient().request<components['schemas']['system.v1.PageVolunteerInsureReply']>(requestConfig);
   },
 
   /**
@@ -6137,7 +6131,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['system.v1.GetVolunteerInsureVisaReply']>(requestConfig);
+    return getApiClient().request<components['schemas']['system.v1.GetVolunteerInsureVisaReply']>(requestConfig);
   },
 
   /**
@@ -6155,7 +6149,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.v1.gongyi.CheckCanReceiveFlowerResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.v1.gongyi.CheckCanReceiveFlowerResponse']>(requestConfig);
   },
 
   /**
@@ -6173,7 +6167,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.v1.gongyi.GetFlowerCountResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.v1.gongyi.GetFlowerCountResponse']>(requestConfig);
   },
 
   /**
@@ -6191,7 +6185,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.v1.gongyi.SendFlowerResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.v1.gongyi.SendFlowerResponse']>(requestConfig);
   },
 
   /**
@@ -6209,7 +6203,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.v1.gongyi.SilentLoginResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.v1.gongyi.SilentLoginResponse']>(requestConfig);
   },
 
   /**
@@ -6227,7 +6221,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['api.elder.v1.gongyi.SyncGyDataToMapResponse']>(requestConfig);
+    return getApiClient().request<components['schemas']['api.elder.v1.gongyi.SyncGyDataToMapResponse']>(requestConfig);
   },
 
   /**
@@ -6245,7 +6239,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['elder.wecom.v1.CreateMomentReply']>(requestConfig);
+    return getApiClient().request<components['schemas']['elder.wecom.v1.CreateMomentReply']>(requestConfig);
   },
 
   /**
@@ -6263,7 +6257,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['elder.wecom.v1.GenerateQRCodeReply']>(requestConfig);
+    return getApiClient().request<components['schemas']['elder.wecom.v1.GenerateQRCodeReply']>(requestConfig);
   },
 
   /**
@@ -6281,7 +6275,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['elder.wecom.v1.GetCommunityTagMappingReply']>(requestConfig);
+    return getApiClient().request<components['schemas']['elder.wecom.v1.GetCommunityTagMappingReply']>(requestConfig);
   },
 
   /**
@@ -6299,7 +6293,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['elder.wecom.v1.HandleCustomerJoinCallbackReply']>(requestConfig);
+    return getApiClient().request<components['schemas']['elder.wecom.v1.HandleCustomerJoinCallbackReply']>(requestConfig);
   },
 
   /**
@@ -6317,7 +6311,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['system.v1.GetWebCosTempKeyReply']>(requestConfig);
+    return getApiClient().request<components['schemas']['system.v1.GetWebCosTempKeyReply']>(requestConfig);
   },
 
   /**
@@ -6335,7 +6329,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['seek_medical.v1.ImportMedicalInfoReply']>(requestConfig);
+    return getApiClient().request<components['schemas']['seek_medical.v1.ImportMedicalInfoReply']>(requestConfig);
   },
 
   /**
@@ -6353,7 +6347,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['business.v1.FindImIdentityReply']>(requestConfig);
+    return getApiClient().request<components['schemas']['business.v1.FindImIdentityReply']>(requestConfig);
   },
 
   /**
@@ -6371,7 +6365,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<any>(requestConfig);
+    return getApiClient().request<any>(requestConfig);
   },
 
   /**
@@ -6389,7 +6383,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['business.v1.ImOperateReply']>(requestConfig);
+    return getApiClient().request<components['schemas']['business.v1.ImOperateReply']>(requestConfig);
   },
 
   /**
@@ -6407,7 +6401,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['business.v1.InitEvaluateHistoryDataReply']>(requestConfig);
+    return getApiClient().request<components['schemas']['business.v1.InitEvaluateHistoryDataReply']>(requestConfig);
   },
 
   /**
@@ -6425,7 +6419,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['system.v1.CreateElderIgnoreReply']>(requestConfig);
+    return getApiClient().request<components['schemas']['system.v1.CreateElderIgnoreReply']>(requestConfig);
   },
 
   /**
@@ -6443,7 +6437,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['system.v1.UserOperateReply']>(requestConfig);
+    return getApiClient().request<components['schemas']['system.v1.UserOperateReply']>(requestConfig);
   },
 
   /**
@@ -6461,7 +6455,7 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['system.v1.UserOperateReply']>(requestConfig);
+    return getApiClient().request<components['schemas']['system.v1.UserOperateReply']>(requestConfig);
   },
 
   /**
@@ -6479,97 +6473,57 @@ export const userApiApi = {
       ...config,
     };
 
-    return getRequestFunction()<components['schemas']['system.v1.UserOperateReply']>(requestConfig);
+    return getApiClient().request<components['schemas']['system.v1.UserOperateReply']>(requestConfig);
   },
 
 };
 
 // ==================== 导出 ====================
 
-// 导出类型定义
 export type userApiApiType = typeof userApiApi;
-
-// 导出常用类型
 export type { components } from './api-generated';
 
 // ==================== 使用示例 ====================
 
 /*
-// 基础使用（使用默认 axios）
+// 方式1: 使用默认配置
 import { userApiApi } from './userApi';
+const result = await userApiApi.someMethod();
 
-const user = await userApiApi.getUserById({ pathParams: { id: 123 } });
-
-// 使用自定义 axios 实例（推荐）
-import axios from 'axios';
-import { userApiApi, setRequestFunction } from './userApi';
-
-// 创建自定义 axios 实例
-const customAxios = axios.create({
+// 方式2: 自定义baseURL和headers
+import { userApiApi, configureApiClient } from './userApi';
+configureApiClient({
   baseURL: 'https://api.example.com',
   timeout: 5000,
+  headers: { 'X-Custom-Header': 'value' }
 });
 
-// 添加请求拦截器（认证、日志等）
-customAxios.interceptors.request.use(config => {
+// 方式3: 使用完全自定义的客户端
+import axios from 'axios';
+import { userApiApi, configureApiClient } from './userApi';
+
+const customAxios = axios.create({
+  baseURL: 'https://api.example.com'
+});
+
+// 添加拦截器
+customAxios.interceptors.request.use((config) => {
   const token = localStorage.getItem('token');
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  console.log('[API Request]', config.method, config.url);
+  if (token) config.headers.Authorization = `Bearer ${token}`;
   return config;
 });
 
-// 添加响应拦截器（错误处理、数据转换等）
 customAxios.interceptors.response.use(
-  response => {
-    console.log('[API Response]', response.status);
-    return response.data; // 直接返回数据部分
-  },
-  error => {
-    if (error.response?.status === 401) {
-      // 处理未授权
-      localStorage.removeItem('token');
-      window.location.href = '/login';
-    }
-    console.error('[API Error]', error);
+  (response) => response.data,
+  (error) => {
+    if (error.response?.status === 401) window.location.href = '/login';
     return Promise.reject(error);
   }
 );
 
-// 设置自定义请求函数（只需设置一次，全局生效）
-setRequestFunction(customAxios.request.bind(customAxios));
-
-// 现在所有 API 调用都会使用你的自定义 axios 实例
-const users = await userApiApi.getUserList({ queryParams: { page: 1 } });
-
-// 使用 fetch 代替 axios
-import { setRequestFunction } from './userApi';
-
-setRequestFunction(async (config) => {
-  const url = new URL(config.url, 'https://api.example.com');
-  
-  // 添加查询参数
-  if (config.params) {
-    Object.entries(config.params).forEach(([key, value]) => {
-      url.searchParams.append(key, String(value));
-    });
+configureApiClient({
+  customClient: {
+    request: (config) => customAxios.request(config)
   }
-  
-  // 发送请求
-  const response = await fetch(url.toString(), {
-    method: config.method,
-    headers: {
-      'Content-Type': 'application/json',
-      ...config.headers,
-    },
-    body: config.data ? JSON.stringify(config.data) : undefined,
-  });
-  
-  if (!response.ok) {
-    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-  }
-  
-  return response.json();
 });
 */

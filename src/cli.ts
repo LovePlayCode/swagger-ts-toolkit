@@ -10,7 +10,7 @@ const program = new Command();
 program
   .name('swagger-ts-toolkit')
   .description('功能强大的 Swagger/OpenAPI TypeScript 工具包')
-  .version('1.0.1');
+  .version('1.0.3');
 
 program
   .command('generate')
